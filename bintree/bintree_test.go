@@ -378,3 +378,30 @@ func TestTravPost(t *testing.T) {
 		}
 	}
 }
+
+func TestTravLevel(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot('k', nil)
+	i := bt.InsertAsLChild(root, 'i', nil)
+	j := bt.InsertAsRChild(root, 'j', nil)
+	h := bt.InsertAsRChild(i, 'h', nil)
+	b := bt.InsertAsLChild(h, 'b', nil)
+	g := bt.InsertAsRChild(h, 'g', nil)
+	a := bt.InsertAsRChild(b, 'a', nil)
+	e := bt.InsertAsLChild(g, 'e', nil)
+	f := bt.InsertAsRChild(g, 'f', nil)
+	c := bt.InsertAsLChild(e, 'c', nil)
+	d := bt.InsertAsRChild(e, 'd', nil)
+	nodes := make([]*Node, 0)
+	nodes = append(nodes, root, i, j, h, b, g, a, e, f, c, d)
+	travnodes := bt.TravLevel()
+	if len(travnodes) != len(nodes) {
+		t.Errorf("TravLevel len got %v expected %v", len(travnodes), len(nodes))
+	}
+	for i, n := range nodes {
+		//fmt.Println(string(n.Key.(rune)))
+		if n.Key != travnodes[i].Key {
+			t.Errorf("TravLevel got %v expected %v", travnodes[i].Key, n.Key)
+		}
+	}
+}

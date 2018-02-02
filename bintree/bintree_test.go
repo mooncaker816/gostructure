@@ -197,3 +197,20 @@ func TestSibling(t *testing.T) {
 		t.Errorf("Got %v expected %v", c.Sibling(), b)
 	}
 }
+
+func TestUncle(t *testing.T) {
+	bt := new(BinTree)
+	a := bt.InsertAsRoot(1, nil)
+	b := bt.InsertAsLChild(a, 2, nil)
+	c := bt.InsertAsRChild(a, 3, nil)
+	d := bt.InsertAsLChild(b, 4, nil)
+	e := bt.InsertAsRChild(b, 5, nil)
+	f := bt.InsertAsLChild(c, 6, nil)
+	g := bt.InsertAsRChild(c, 7, nil)
+	if d.Uncle() == nil || d.Uncle() != c || d.Uncle() != e.Uncle() {
+		t.Errorf("Got %v expected %v", d.Uncle(), c)
+	}
+	if f.Uncle() == nil || f.Uncle() != b || f.Uncle() != g.Uncle() {
+		t.Errorf("Got %v expected %v", f.Uncle(), b)
+	}
+}

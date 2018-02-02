@@ -181,3 +181,19 @@ func TestIsLeaf(t *testing.T) {
 		t.Errorf("Got %v expected %v", a.IsLeaf(), false)
 	}
 }
+
+func TestSibling(t *testing.T) {
+	bt := new(BinTree)
+	a := bt.InsertAsRoot(1, nil)
+	if a.Sibling() != nil {
+		t.Errorf("Got %v expected %v", a.Sibling(), nil)
+	}
+	b := bt.InsertAsLChild(a, 2, nil)
+	c := bt.InsertAsRChild(a, 3, nil)
+	if b.Sibling() == nil || b.Sibling() != c {
+		t.Errorf("Got %v expected %v", b.Sibling(), c)
+	}
+	if c.Sibling() == nil || c.Sibling() != b {
+		t.Errorf("Got %v expected %v", c.Sibling(), b)
+	}
+}

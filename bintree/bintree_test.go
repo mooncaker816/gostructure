@@ -120,3 +120,18 @@ func TestHasLChild(t *testing.T) {
 		t.Errorf("Got %v expected %v", b.HasLChild(), false)
 	}
 }
+
+func TestHasRChild(t *testing.T) {
+	bt := new(BinTree)
+	a := bt.InsertAsRoot(1, nil)
+	if a.HasRChild() {
+		t.Errorf("Got %v expected %v", a.HasRChild(), false)
+	}
+	b := bt.InsertAsRChild(a, 2, nil)
+	if !a.HasRChild() {
+		t.Errorf("Got %v expected %v", a.HasRChild(), true)
+	}
+	if b.HasRChild() {
+		t.Errorf("Got %v expected %v", b.HasRChild(), false)
+	}
+}

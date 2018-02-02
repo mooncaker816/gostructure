@@ -255,16 +255,18 @@ func (n *Node) TravIn2(opts ...Option) []*Node {
 		if n != nil {
 			s.Push(n)
 			n = n.LChild
-		} else if !s.Empty() {
-			ni, _ := s.Pop()
-			node := ni.(*Node)
-			for _, opt := range opts {
-				opt(node)
-			}
-			nodes = append(nodes, node)
-			n = n.RChild
 		} else {
-			break
+			if !s.Empty() {
+				ni, _ := s.Pop()
+				n = ni.(*Node)
+				for _, opt := range opts {
+					opt(n)
+				}
+				nodes = append(nodes, n)
+				n = n.RChild
+			} else {
+				break
+			}
 		}
 	}
 	return nodes
@@ -274,10 +276,9 @@ func (n *Node) TravIn2(opts ...Option) []*Node {
 func (n *Node) TravIn3(opts ...Option) []*Node {
 	nodes := make([]*Node, 0)
 	backtrack := false
-	node := n
 	for {
-		if !backtrack && node.HasLChild() {
-			node = node.LChild
+		if !backtrack && n.HasLChild() {
+			n = n.LChild
 		} else {
 			for _, opt := range opts {
 				opt(n)
@@ -320,13 +321,12 @@ func (n *Node) TravPostR(opts ...Option) []*Node {
 	if n == nil {
 		return nil
 	}
-	node := n
-	nodes = append(nodes, node.LChild.TravInR()...)
-	nodes = append(nodes, node.RChild.TravInR()...)
+	nodes = append(nodes, n.LChild.TravPostR()...)
+	nodes = append(nodes, n.RChild.TravPostR()...)
 	for _, opt := range opts {
-		opt(node)
+		opt(n)
 	}
-	nodes = append(nodes, node)
+	nodes = append(nodes, n)
 	return nodes
 }
 
@@ -344,19 +344,23 @@ func (n *Node) TravPost1(opts ...Option) []*Node {
 			gotoHLVFL(s)
 		}
 		ni, _ = s.Pop()
-		node = ni.(*Node)
+		n = ni.(*Node)
 		for _, opt := range opts {
-			opt(node)
+			opt(n)
 		}
-		nodes = append(nodes, node)
+		nodes = append(nodes, n)
 	}
 	return nodes
 }
 
 //在以S栈顶节点为根的子树中，找到最高左侧可见叶节点
 func gotoHLVFL(s *stack.Stack) {
-	for ni, ok := s.Peek(); ok; {
+	for {
+		ni, _ := s.Peek()
 		node := ni.(*Node)
+		if node == nil {
+			break
+		}
 		if node.HasLChild() {
 			if node.HasRChild() {
 				s.Push(node.RChild)
@@ -499,6 +503,7 @@ func WithPrintNodeKey() Option {
 // TravPreR 二叉树前序遍历递归版
 func (t *BinTree) TravPreR(opts ...Option) []*Node {
 	return t.Root.TravPreR(opts...)
+
 }
 
 // TravPre1 二叉树前序遍历迭代版1

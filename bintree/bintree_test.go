@@ -236,3 +236,145 @@ func TestSize(t *testing.T) {
 		t.Errorf("Got %v expected %v", d.Size(), 1)
 	}
 }
+
+func TestTravPre(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot('k', nil)
+	i := bt.InsertAsLChild(root, 'i', nil)
+	j := bt.InsertAsRChild(root, 'j', nil)
+	h := bt.InsertAsRChild(i, 'h', nil)
+	b := bt.InsertAsLChild(h, 'b', nil)
+	g := bt.InsertAsRChild(h, 'g', nil)
+	a := bt.InsertAsRChild(b, 'a', nil)
+	e := bt.InsertAsLChild(g, 'e', nil)
+	f := bt.InsertAsRChild(g, 'f', nil)
+	c := bt.InsertAsLChild(e, 'c', nil)
+	d := bt.InsertAsRChild(e, 'd', nil)
+	nodes := make([]*Node, 0)
+	nodes = append(nodes, root, i, h, b, a, g, e, c, d, f, j)
+	travrnodes := bt.TravPreR()
+	if len(travrnodes) != len(nodes) {
+		t.Errorf("TravPreR got %v expected %v", len(travrnodes), len(nodes))
+	}
+	for i, n := range nodes {
+		//fmt.Println(string(n.Key.(rune)))
+		if n.Key != travrnodes[i].Key {
+			t.Errorf("TravPreR got %v expected %v", travrnodes[i].Key, n.Key)
+		}
+	}
+	trav1nodes := bt.TravPre1()
+	if len(trav1nodes) != len(nodes) {
+		t.Errorf("TravPre1 got %v expected %v", len(trav1nodes), len(nodes))
+	}
+	for i, n := range nodes {
+		//fmt.Println(string(n.Key.(rune)))
+		if n.Key != trav1nodes[i].Key {
+			t.Errorf("TravPre1 got %v expected %v", trav1nodes[i].Key, n.Key)
+		}
+	}
+	trav2nodes := bt.TravPre2()
+	if len(trav2nodes) != len(nodes) {
+		t.Errorf("TravPre2 got %v expected %v", len(trav2nodes), len(nodes))
+	}
+	for i, n := range nodes {
+		//fmt.Println(string(n.Key.(rune)))
+		if n.Key != trav2nodes[i].Key {
+			t.Errorf("TravPre2 got %v expected %v", trav2nodes[i].Key, n.Key)
+		}
+	}
+}
+
+func TestTravIn(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot('k', nil)
+	i := bt.InsertAsLChild(root, 'i', nil)
+	j := bt.InsertAsRChild(root, 'j', nil)
+	h := bt.InsertAsRChild(i, 'h', nil)
+	b := bt.InsertAsLChild(h, 'b', nil)
+	g := bt.InsertAsRChild(h, 'g', nil)
+	a := bt.InsertAsRChild(b, 'a', nil)
+	e := bt.InsertAsLChild(g, 'e', nil)
+	f := bt.InsertAsRChild(g, 'f', nil)
+	c := bt.InsertAsLChild(e, 'c', nil)
+	d := bt.InsertAsRChild(e, 'd', nil)
+	nodes := make([]*Node, 0)
+	nodes = append(nodes, i, b, a, h, c, e, d, g, f, root, j)
+	travrnodes := bt.TravInR()
+	if len(travrnodes) != len(nodes) {
+		t.Errorf("TravInR len got %v expected %v", len(travrnodes), len(nodes))
+	}
+	for i, n := range nodes {
+		//fmt.Println(string(n.Key.(rune)))
+		if n.Key != travrnodes[i].Key {
+			t.Errorf("TravInR got %v expected %v", travrnodes[i].Key, n.Key)
+		}
+	}
+	trav1nodes := bt.TravIn1()
+	if len(trav1nodes) != len(nodes) {
+		t.Errorf("TravIn1 len got %v expected %v", len(trav1nodes), len(nodes))
+	}
+	for i, n := range nodes {
+		//fmt.Println(string(n.Key.(rune)))
+		if n.Key != trav1nodes[i].Key {
+			t.Errorf("TravIn1 got %v expected %v", trav1nodes[i].Key, n.Key)
+		}
+	}
+	//bt.Print()
+	trav2nodes := bt.TravIn2()
+	if len(trav2nodes) != len(nodes) {
+		t.Errorf("TravIn2 len got %v expected %v", len(trav2nodes), len(nodes))
+	}
+	for i, n := range nodes {
+		//fmt.Println(string(n.Key.(rune)))
+		if n.Key != trav2nodes[i].Key {
+			t.Errorf("TravIn2 got %v expected %v", trav2nodes[i].Key, n.Key)
+		}
+	}
+	trav3nodes := bt.TravIn3()
+	if len(trav3nodes) != len(nodes) {
+		t.Errorf("TravIn3 len got %v expected %v", len(trav3nodes), len(nodes))
+	}
+	for i, n := range nodes {
+		//fmt.Println(string(n.Key.(rune)))
+		if n.Key != trav3nodes[i].Key {
+			t.Errorf("TravIn3 got %v expected %v", trav3nodes[i].Key, n.Key)
+		}
+	}
+}
+
+func TestTravPost(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot('k', nil)
+	i := bt.InsertAsLChild(root, 'i', nil)
+	j := bt.InsertAsRChild(root, 'j', nil)
+	h := bt.InsertAsRChild(i, 'h', nil)
+	b := bt.InsertAsLChild(h, 'b', nil)
+	g := bt.InsertAsRChild(h, 'g', nil)
+	a := bt.InsertAsRChild(b, 'a', nil)
+	e := bt.InsertAsLChild(g, 'e', nil)
+	f := bt.InsertAsRChild(g, 'f', nil)
+	c := bt.InsertAsLChild(e, 'c', nil)
+	d := bt.InsertAsRChild(e, 'd', nil)
+	nodes := make([]*Node, 0)
+	nodes = append(nodes, a, b, c, d, e, f, g, h, i, j, root)
+	travrnodes := bt.TravPostR()
+	if len(travrnodes) != len(nodes) {
+		t.Errorf("TravPostR len got %v expected %v", len(travrnodes), len(nodes))
+	}
+	for i, n := range nodes {
+		//fmt.Println(string(n.Key.(rune)))
+		if n.Key != travrnodes[i].Key {
+			t.Errorf("TravPostR got %v expected %v", travrnodes[i].Key, n.Key)
+		}
+	}
+	trav1nodes := bt.TravPost1()
+	if len(trav1nodes) != len(nodes) {
+		t.Errorf("TravPost1 len got %v expected %v", len(trav1nodes), len(nodes))
+	}
+	for i, n := range nodes {
+		//fmt.Println(string(n.Key.(rune)))
+		if n.Key != trav1nodes[i].Key {
+			t.Errorf("TravPost1 got %v expected %v", trav1nodes[i].Key, n.Key)
+		}
+	}
+}

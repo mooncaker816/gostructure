@@ -214,3 +214,25 @@ func TestUncle(t *testing.T) {
 		t.Errorf("Got %v expected %v", f.Uncle(), b)
 	}
 }
+
+func TestSize(t *testing.T) {
+	bt := new(BinTree)
+	a := bt.InsertAsRoot(1, nil)
+	b := bt.InsertAsLChild(a, 2, nil)
+	c := bt.InsertAsRChild(a, 3, nil)
+	d := bt.InsertAsLChild(b, 4, nil)
+	f := bt.InsertAsLChild(c, 6, nil)
+	g := bt.InsertAsRChild(c, 7, nil)
+	if a.Size() != 6 {
+		t.Errorf("Got %v expected %v", a.Size(), 6)
+	}
+	if b.Size() != 2 {
+		t.Errorf("Got %v expected %v", b.Size(), 2)
+	}
+	if c.Size() != 3 {
+		t.Errorf("Got %v expected %v", c.Size(), 3)
+	}
+	if d.Size() != 1 || d.Size() != f.Size() || d.Size() != g.Size() {
+		t.Errorf("Got %v expected %v", d.Size(), 1)
+	}
+}

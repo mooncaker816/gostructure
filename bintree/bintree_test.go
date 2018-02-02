@@ -62,7 +62,7 @@ func TestIsRoot(t *testing.T) {
 	}
 }
 
-func TestIsLeftChild(t *testing.T) {
+func TestIsLChild(t *testing.T) {
 	bt := new(BinTree)
 	a := bt.InsertAsRoot(1, nil)
 	if a.IsLChild() {
@@ -75,5 +75,21 @@ func TestIsLeftChild(t *testing.T) {
 	c := bt.InsertAsRChild(a, 3, nil)
 	if c.IsLChild() {
 		t.Errorf("Got %v expected %v", c.IsLChild(), false)
+	}
+}
+
+func TestIsRChild(t *testing.T) {
+	bt := new(BinTree)
+	a := bt.InsertAsRoot(1, nil)
+	if a.IsRChild() {
+		t.Errorf("Got %v expected %v", a.IsRChild(), false)
+	}
+	b := bt.InsertAsLChild(a, 2, nil)
+	if b.IsRChild() {
+		t.Errorf("Got %v expected %v", b.IsRChild(), false)
+	}
+	c := bt.InsertAsRChild(a, 3, nil)
+	if !c.IsRChild() {
+		t.Errorf("Got %v expected %v", c.IsRChild(), true)
 	}
 }

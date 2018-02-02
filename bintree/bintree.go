@@ -422,7 +422,7 @@ func removeAt(n *Node) (count int) {
 	return
 }
 
-// Secede 二叉树子树分离算法：将子树x从当前树中摘除���将其封装为一棵独立子树返回
+// Secede 二叉树子树分离算法：将子树x从当前树中摘除并将其封装为一棵独立子树返回
 func (t *BinTree) Secede(n *Node) *BinTree {
 	if n.Tree != t {
 		return nil

@@ -166,3 +166,18 @@ func TestHasBothChild(t *testing.T) {
 		t.Errorf("Got %v expected %v", a.HasBothChild(), true)
 	}
 }
+
+func TestIsLeaf(t *testing.T) {
+	bt := new(BinTree)
+	a := bt.InsertAsRoot(1, nil)
+	if !a.IsLeaf() {
+		t.Errorf("Got %v expected %v", a.IsLeaf(), true)
+	}
+	b := bt.InsertAsRChild(a, 2, nil)
+	if !b.IsLeaf() {
+		t.Errorf("Got %v expected %v", b.IsLeaf(), true)
+	}
+	if a.IsLeaf() {
+		t.Errorf("Got %v expected %v", a.IsLeaf(), false)
+	}
+}

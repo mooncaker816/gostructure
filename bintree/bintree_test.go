@@ -1,6 +1,9 @@
 package bintree
 
 import (
+	"bytes"
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/mooncaker816/gostructure/queue"
@@ -404,4 +407,228 @@ func TestTravLevel(t *testing.T) {
 			t.Errorf("TravLevel got %v expected %v", travnodes[i].Key, n.Key)
 		}
 	}
+}
+
+func TestRemove(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot("k", nil)
+	i := bt.InsertAsLChild(root, "i", nil)
+	j := bt.InsertAsRChild(root, "j", nil)
+	h := bt.InsertAsRChild(i, "h", nil)
+	b := bt.InsertAsLChild(h, "b", nil)
+	g := bt.InsertAsRChild(h, "g", nil)
+	a := bt.InsertAsRChild(b, "a", nil)
+	e := bt.InsertAsLChild(g, "e", nil)
+	f := bt.InsertAsRChild(g, "f", nil)
+	c := bt.InsertAsLChild(e, "c", nil)
+	d := bt.InsertAsRChild(e, "d", nil)
+	bt.Print()
+	fmt.Println("remove ", g.Key)
+	bt.Remove(g)
+	if bt.Size != 6 {
+		t.Errorf("After removing got size %v expected %v", bt.Size, 6)
+	}
+	if root.Height != 4 {
+		t.Errorf("After removing got height %v expected %v", root.Height, 4)
+	}
+	bt.Print()
+	//w := os.Stdout
+	wprer := new(bytes.Buffer)
+	wpre1 := new(bytes.Buffer)
+	wpre2 := new(bytes.Buffer)
+	fmt.Println("pre order by recursive:")
+	bt.TravPreR(WithPrintNodeKey(wprer))
+	fmt.Println(wprer)
+	fmt.Println("pre order by iteration1:")
+	bt.TravPre1(WithPrintNodeKey(wpre1))
+	fmt.Println(wpre1)
+	fmt.Println("pre order by iteration2:")
+	bt.TravPre2(WithPrintNodeKey(wpre2))
+	fmt.Println(wpre2)
+	if wprer.String() != wpre1.String() || wpre1.String() != wpre2.String() {
+		t.Errorf("pre order is wrong")
+	}
+	winr := new(bytes.Buffer)
+	win1 := new(bytes.Buffer)
+	win2 := new(bytes.Buffer)
+	win3 := new(bytes.Buffer)
+	fmt.Println("in order by recursive:")
+	bt.TravInR(WithPrintNodeKey(winr))
+	fmt.Println(winr)
+	fmt.Println("in order by iteration1:")
+	bt.TravIn1(WithPrintNodeKey(win1))
+	fmt.Println(win1)
+	fmt.Println("in order by iteration2:")
+	bt.TravIn2(WithPrintNodeKey(win2))
+	fmt.Println(win2)
+	fmt.Println("in order by iteration3:")
+	bt.TravIn3(WithPrintNodeKey(win3))
+	fmt.Println(win3)
+	if winr.String() != win1.String() || win1.String() != win2.String() || win2.String() != win3.String() {
+		t.Errorf("in order is wrong")
+	}
+	wpostr := new(bytes.Buffer)
+	wpost1 := new(bytes.Buffer)
+	fmt.Println("post order by recursive:")
+	bt.TravPostR(WithPrintNodeKey(wpostr))
+	fmt.Println(wpostr)
+	fmt.Println("post order by iteration1:")
+	bt.TravPost1(WithPrintNodeKey(wpost1))
+	fmt.Println(wpost1)
+	if wpostr.String() != wpost1.String() {
+		t.Errorf("post order is wrong")
+	}
+	fmt.Println("level order by iteration1:")
+	bt.TravLevel(WithPrintNodeKey(os.Stdout))
+	fmt.Println()
+	_ = j
+	_ = a
+	_ = f
+	_ = c
+	_ = d
+}
+
+func TestSecede(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot("k", nil)
+	i := bt.InsertAsLChild(root, "i", nil)
+	j := bt.InsertAsRChild(root, "j", nil)
+	h := bt.InsertAsRChild(i, "h", nil)
+	b := bt.InsertAsLChild(h, "b", nil)
+	g := bt.InsertAsRChild(h, "g", nil)
+	a := bt.InsertAsRChild(b, "a", nil)
+	e := bt.InsertAsLChild(g, "e", nil)
+	f := bt.InsertAsRChild(g, "f", nil)
+	c := bt.InsertAsLChild(e, "c", nil)
+	d := bt.InsertAsRChild(e, "d", nil)
+	bt.Print()
+	fmt.Println("Secede ", g.Key)
+	subt := bt.Secede(g)
+	if bt.Size != 6 {
+		t.Errorf("After seceding got size %v expected %v", bt.Size, 6)
+	}
+	if root.Height != 4 {
+		t.Errorf("After seceding got height %v expected %v", root.Height, 4)
+	}
+	bt.Print()
+	if subt.Size != 5 {
+		t.Errorf("After seceding sub tree got size %v expected %v", subt.Size, 5)
+	}
+	if subt.Root.Height != 2 {
+		t.Errorf("After seceding sub tree got height %v expected %v", subt.Root.Height, 2)
+	}
+	subt.Print()
+	//w := os.Stdout
+
+	_ = j
+	_ = a
+	_ = f
+	_ = c
+	_ = d
+}
+
+func TestAttachAsLSubTree(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot("k", nil)
+	i := bt.InsertAsLChild(root, "i", nil)
+	j := bt.InsertAsRChild(root, "j", nil)
+	h := bt.InsertAsRChild(i, "h", nil)
+	b := bt.InsertAsLChild(h, "b", nil)
+	g := bt.InsertAsRChild(h, "g", nil)
+	a := bt.InsertAsRChild(b, "a", nil)
+	e := bt.InsertAsLChild(g, "e", nil)
+	f := bt.InsertAsRChild(g, "f", nil)
+	c := bt.InsertAsLChild(e, "c", nil)
+	d := bt.InsertAsRChild(e, "d", nil)
+	bt.Print()
+	bt2 := new(BinTree)
+	root2 := bt2.InsertAsRoot("k", nil)
+	i2 := bt2.InsertAsLChild(root2, "i", nil)
+	j2 := bt2.InsertAsRChild(root2, "j", nil)
+	h2 := bt2.InsertAsRChild(i2, "h", nil)
+	b2 := bt2.InsertAsLChild(h2, "b", nil)
+	g2 := bt2.InsertAsRChild(h2, "g", nil)
+	a2 := bt2.InsertAsRChild(b2, "a", nil)
+	e2 := bt2.InsertAsLChild(g2, "e", nil)
+	f2 := bt2.InsertAsRChild(g2, "f", nil)
+	c2 := bt2.InsertAsLChild(e2, "c", nil)
+	d2 := bt2.InsertAsRChild(e2, "d", nil)
+	bt2.Print()
+	bt.AttachAsLSubTree(b, bt2)
+	//bt.PrintWithUnitSize(1)
+	if bt.Size != 22 {
+		t.Errorf("After attach got size %v expected %v", bt.Size, 22)
+	}
+	if root.Height != 9 {
+		t.Errorf("After attach got height %v expected %v", root.Height, 9)
+	}
+	for _, n := range bt.TravPre1() {
+		if n.Tree != bt {
+			t.Errorf("After attach node %v got belongs to %v expected %v", n.Key, n.Tree, bt)
+		}
+	}
+	_ = j
+	_ = a
+	_ = f
+	_ = c
+	_ = d
+
+	_ = j2
+	_ = a2
+	_ = f2
+	_ = c2
+	_ = d2
+}
+
+func TestAttachAsRSubTree(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot("k", nil)
+	i := bt.InsertAsLChild(root, "i", nil)
+	j := bt.InsertAsRChild(root, "j", nil)
+	h := bt.InsertAsRChild(i, "h", nil)
+	b := bt.InsertAsLChild(h, "b", nil)
+	g := bt.InsertAsRChild(h, "g", nil)
+	a := bt.InsertAsRChild(b, "a", nil)
+	e := bt.InsertAsLChild(g, "e", nil)
+	f := bt.InsertAsRChild(g, "f", nil)
+	c := bt.InsertAsLChild(e, "c", nil)
+	d := bt.InsertAsRChild(e, "d", nil)
+	bt.Print()
+	bt2 := new(BinTree)
+	root2 := bt2.InsertAsRoot("k", nil)
+	i2 := bt2.InsertAsLChild(root2, "i", nil)
+	j2 := bt2.InsertAsRChild(root2, "j", nil)
+	h2 := bt2.InsertAsRChild(i2, "h", nil)
+	b2 := bt2.InsertAsLChild(h2, "b", nil)
+	g2 := bt2.InsertAsRChild(h2, "g", nil)
+	a2 := bt2.InsertAsRChild(b2, "a", nil)
+	e2 := bt2.InsertAsLChild(g2, "e", nil)
+	f2 := bt2.InsertAsRChild(g2, "f", nil)
+	c2 := bt2.InsertAsLChild(e2, "c", nil)
+	d2 := bt2.InsertAsRChild(e2, "d", nil)
+	bt2.Print()
+	bt.AttachAsRSubTree(j, bt2)
+	//bt.PrintWithUnitSize(1)
+	if bt.Size != 22 {
+		t.Errorf("After attach got size %v expected %v", bt.Size, 22)
+	}
+	if root.Height != 7 {
+		t.Errorf("After attach got height %v expected %v", root.Height, 7)
+	}
+	for _, n := range bt.TravPre1() {
+		if n.Tree != bt {
+			t.Errorf("After attach node %v got belongs to %v expected %v", n.Key, n.Tree, bt)
+		}
+	}
+	_ = j
+	_ = a
+	_ = f
+	_ = c
+	_ = d
+
+	_ = j2
+	_ = a2
+	_ = f2
+	_ = c2
+	_ = d2
 }

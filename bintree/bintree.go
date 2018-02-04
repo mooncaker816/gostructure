@@ -145,8 +145,8 @@ func (n *Node) TravPreR(opts ...Option) []*Node {
 		opt(n)
 	}
 	nodes = append(nodes, n)
-	nodes = append(nodes, n.LChild.TravPreR()...)
-	nodes = append(nodes, n.RChild.TravPreR()...)
+	nodes = append(nodes, n.LChild.TravPreR(opts...)...)
+	nodes = append(nodes, n.RChild.TravPreR(opts...)...)
 	return nodes
 }
 
@@ -210,12 +210,12 @@ func (n *Node) TravInR(opts ...Option) []*Node {
 	if n == nil {
 		return nil
 	}
-	nodes = append(nodes, n.LChild.TravInR()...)
+	nodes = append(nodes, n.LChild.TravInR(opts...)...)
 	for _, opt := range opts {
 		opt(n)
 	}
 	nodes = append(nodes, n)
-	nodes = append(nodes, n.RChild.TravInR()...)
+	nodes = append(nodes, n.RChild.TravInR(opts...)...)
 	return nodes
 }
 
@@ -321,8 +321,8 @@ func (n *Node) TravPostR(opts ...Option) []*Node {
 	if n == nil {
 		return nil
 	}
-	nodes = append(nodes, n.LChild.TravPostR()...)
-	nodes = append(nodes, n.RChild.TravPostR()...)
+	nodes = append(nodes, n.LChild.TravPostR(opts...)...)
+	nodes = append(nodes, n.RChild.TravPostR(opts...)...)
 	for _, opt := range opts {
 		opt(n)
 	}
@@ -477,6 +477,7 @@ func (t *BinTree) AttachAsLSubTree(n *Node, st *BinTree) {
 	n.LChild.Parent = n
 	t.Size += st.Size
 	n.updateHeightAbove()
+	n.LChild.TravPre1(WithUpdateNodeBelongsTo(t))
 }
 
 // AttachAsRSubTree attaches t as n's right sub tree
@@ -488,15 +489,23 @@ func (t *BinTree) AttachAsRSubTree(n *Node, st *BinTree) {
 	n.RChild.Parent = n
 	t.Size += st.Size
 	n.updateHeightAbove()
+	n.RChild.TravPre1(WithUpdateNodeBelongsTo(t))
 }
 
 // Option is a func to operate on a node
 type Option func(n *Node)
 
 // WithPrintNodeKey returns a func which prints node's key
-func WithPrintNodeKey() Option {
+func WithPrintNodeKey(w io.Writer) Option {
 	return func(n *Node) {
-		fmt.Printf("%v ", n.Key)
+		fmt.Fprintf(w, "%v ", n.Key)
+	}
+}
+
+// WithUpdateNodeBelongsTo returns a func which changes the tree which it belongs to
+func WithUpdateNodeBelongsTo(t *BinTree) Option {
+	return func(n *Node) {
+		n.Tree = t
 	}
 }
 

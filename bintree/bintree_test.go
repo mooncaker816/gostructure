@@ -22,6 +22,7 @@ func TestInsertAsRoot(t *testing.T) {
 			q.Enqueue(bt.InsertAsLChild(n, key, nil))
 			key++
 			q.Enqueue(bt.InsertAsRChild(n, key, nil))
+
 			key++
 		}
 	}
@@ -555,7 +556,7 @@ func TestAttachAsLSubTree(t *testing.T) {
 	d2 := bt2.InsertAsRChild(e2, "d", nil)
 	bt2.Print()
 	bt.AttachAsLSubTree(b, bt2)
-	//bt.PrintWithUnitSize(1)
+	bt.PrintWithUnitSize(1)
 	if bt.Size != 22 {
 		t.Errorf("After attach got size %v expected %v", bt.Size, 22)
 	}
@@ -607,8 +608,12 @@ func TestAttachAsRSubTree(t *testing.T) {
 	c2 := bt2.InsertAsLChild(e2, "c", nil)
 	d2 := bt2.InsertAsRChild(e2, "d", nil)
 	bt2.Print()
+	// bt3 := bt2.Copy()
+	// bt3.Print()
 	bt.AttachAsRSubTree(j, bt2)
-	//bt.PrintWithUnitSize(1)
+	bt.PrintWithUnitSize(1)
+	// bt.AttachAsLSubTree(j2, bt3)
+	// bt.PrintWithUnitSize(1)
 	if bt.Size != 22 {
 		t.Errorf("After attach got size %v expected %v", bt.Size, 22)
 	}

@@ -80,6 +80,9 @@ func (n *Node) Uncle() *Node {
 
 // Size 统计当前节点后代总数，即以其为根的子树规模
 func (n *Node) Size() int {
+	if n == nil {
+		return 0
+	}
 	count := 1
 	if n.HasLChild() {
 		count += n.LChild.Size()
@@ -88,6 +91,19 @@ func (n *Node) Size() int {
 		count += n.RChild.Size()
 	}
 	return count
+}
+
+// Level 返回当前节点的层数
+func (n *Node) Level() int {
+	if n == nil {
+		return -1
+	}
+	l := 1
+	for !n.IsRoot() {
+		l++
+		n = n.Parent
+	}
+	return l
 }
 
 // InsertAsLChild inserts a new node(key,data) as left child of n
@@ -623,60 +639,240 @@ func (t *BinTree) PrintWithUnitSize(size int) {
 	t.FprintWithUnitSize(os.Stdout, size)
 }
 
-// FprintWithUnitSize 以指定的长度为一个基本单元，打印BinTree的拓扑结构到io.Writer
+// // FprintWithUnitSize 以指定的长度为一个基本单元，打印BinTree的拓扑结构到io.Writer
+// func (t *BinTree) FprintWithUnitSize(w io.Writer, size int) {
+// 	if size <= 0 {
+// 		panic("unit size can not be less than 1")
+// 	}
+// 	buf := bufio.NewWriter(w)
+// 	unitSpace := strings.Repeat(" ", size)
+// 	unitHen := strings.Repeat("─", size)
+// 	q := queue.NewQueue()
+// 	q.Enqueue(t.Root)
+// 	nodewidth := 1<<uint((t.Root.Height+1)) - 1
+// 	for l := 0; l <= t.Root.Height; l++ {
+// 		for i := 0; i < 1<<uint(l); i++ {
+// 			ni, _ := q.Dequeue()
+// 			if ni == nil {
+// 				q.Enqueue(nil)
+// 				q.Enqueue(nil)
+// 				buf.WriteString(fmt.Sprintf("%s", strings.Repeat(unitSpace, nodewidth)))
+// 				buf.WriteString(fmt.Sprintf("%s", unitSpace))
+// 				continue
+// 			}
+// 			node := ni.(*Node)
+// 			if l < t.Root.Height {
+// 				nodeLeftStr := strings.Repeat(unitSpace, (nodewidth-3)/4) +
+// 					strings.Repeat(" ", size-1) + "┌" +
+// 					//"┌" + strings.Repeat("─", size-1) +
+// 					strings.Repeat(unitHen, (nodewidth-3)/4)
+// 				nodeRightStr := strings.Repeat(unitHen, (nodewidth-3)/4) +
+// 					//strings.Repeat(" ", size-1) + "┐" +
+// 					strings.Repeat("─", size-1) + "┐" +
+// 					strings.Repeat(unitSpace, (nodewidth-3)/4)
+// 				if node.HasLChild() {
+// 					q.Enqueue(node.LChild)
+// 					buf.WriteString(fmt.Sprintf("%s", nodeLeftStr))
+// 				} else {
+// 					q.Enqueue(nil)
+// 					buf.WriteString(fmt.Sprintf("%s", strings.Repeat(unitSpace, (nodewidth-1)/2)))
+// 				}
+// 				buf.WriteString(fmt.Sprintf("%*v", size, node.Key))
+// 				if node.HasRChild() {
+// 					q.Enqueue(node.RChild)
+// 					buf.WriteString(fmt.Sprintf("%s", nodeRightStr))
+// 				} else {
+// 					q.Enqueue(nil)
+// 					buf.WriteString(fmt.Sprintf("%s", strings.Repeat(unitSpace, (nodewidth-1)/2)))
+// 				}
+// 				buf.WriteString(fmt.Sprintf("%s", unitSpace))
+// 			} else {
+// 				buf.WriteString(fmt.Sprintf("%*v", size, node.Key))
+// 				buf.WriteString(fmt.Sprintf("%s", unitSpace))
+// 			}
+// 		}
+// 		nodewidth = (nodewidth - 1) / 2
+// 		buf.WriteString(fmt.Sprintf("\n"))
+// 	}
+// 	buf.Flush()
+// }
+
+// FprintWithUnitSize 以指定的长度为一个基本单元，打印BinTree的拓扑结构到io.Writer，树宽为节点数
 func (t *BinTree) FprintWithUnitSize(w io.Writer, size int) {
+	buf := bufio.NewWriter(w)
+	if t == nil {
+		buf.WriteString("Empty tree!")
+		buf.Flush()
+		return
+	}
 	if size <= 0 {
 		panic("unit size can not be less than 1")
 	}
-	buf := bufio.NewWriter(w)
 	unitSpace := strings.Repeat(" ", size)
 	unitHen := strings.Repeat("─", size)
 	q := queue.NewQueue()
 	q.Enqueue(t.Root)
-	nodewidth := 1<<uint((t.Root.Height+1)) - 1
-	for l := 0; l <= t.Root.Height; l++ {
-		for i := 0; i < 1<<uint(l); i++ {
-			ni, _ := q.Dequeue()
-			if ni == nil {
-				q.Enqueue(nil)
-				q.Enqueue(nil)
-				buf.WriteString(fmt.Sprintf("%s", strings.Repeat(unitSpace, nodewidth)))
-				buf.WriteString(fmt.Sprintf("%s", unitSpace))
-				continue
-			}
-			node := ni.(*Node)
-			if l < t.Root.Height {
-				nodeLeftStr := strings.Repeat(unitSpace, (nodewidth-3)/4) +
-					strings.Repeat(" ", size-1) + "┌" +
-					//"┌" + strings.Repeat("─", size-1) +
-					strings.Repeat(unitHen, (nodewidth-3)/4)
-				nodeRightStr := strings.Repeat(unitHen, (nodewidth-3)/4) +
-					//strings.Repeat(" ", size-1) + "┐" +
-					strings.Repeat("─", size-1) + "┐" +
-					strings.Repeat(unitSpace, (nodewidth-3)/4)
-				if node.HasLChild() {
-					q.Enqueue(node.LChild)
-					buf.WriteString(fmt.Sprintf("%s", nodeLeftStr))
-				} else {
-					q.Enqueue(nil)
-					buf.WriteString(fmt.Sprintf("%s", strings.Repeat(unitSpace, (nodewidth-1)/2)))
-				}
-				buf.WriteString(fmt.Sprintf("%*v", size, node.Key))
-				if node.HasRChild() {
-					q.Enqueue(node.RChild)
-					buf.WriteString(fmt.Sprintf("%s", nodeRightStr))
-				} else {
-					q.Enqueue(nil)
-					buf.WriteString(fmt.Sprintf("%s", strings.Repeat(unitSpace, (nodewidth-1)/2)))
-				}
-				buf.WriteString(fmt.Sprintf("%s", unitSpace))
-			} else {
-				buf.WriteString(fmt.Sprintf("%*v", size, node.Key))
-				buf.WriteString(fmt.Sprintf("%s", unitSpace))
-			}
+	offsetQ := queue.NewQueue()
+	offsetQ.Enqueue(0)
+	prevlevel := 0
+
+	delta := 0 // 由于没有孩子节点需要过继给后续有孩子节点的偏移量
+
+	for !q.Empty() {
+		ni, _ := q.Dequeue()
+		offseti, _ := offsetQ.Dequeue()
+		n := ni.(*Node)
+		offset := offseti.(int)
+		if prevlevel != n.Level() {
+			delta = 0 // 原二叉树与对应的完全二叉树中缺失节点造成的空格缺失数
+			prevlevel = n.Level()
+			buf.WriteString("\n")
 		}
-		nodewidth = (nodewidth - 1) / 2
-		buf.WriteString(fmt.Sprintf("\n"))
+
+		var nodeLeftStr, nodeRightStr string
+		// 由父亲节点遗留下来的前缀偏移量
+		buf.WriteString(strings.Repeat(unitSpace, offset))
+		if n.IsRChild() && n.Sibling() == nil {
+			offset++                   // 缺失左兄弟导致原本兄弟与兄弟之间的一个单位空格缺失，需传给该节点的后代节点
+			buf.WriteString(unitSpace) // 在打印右儿子之前补上该空格
+		}
+		if n.HasLChild() {
+			q.Enqueue(n.LChild)
+			offset += delta // 将偏移量加上由之前同层的叶子节点造成的空儿子节点引起的空格数，完成过继后置零
+			delta = 0
+			offsetQ.Enqueue(offset) //如果该节点有左孩子，优先将偏移量转移至左孩子（因为从左往右打印）
+			nodeLeftStr = strings.Repeat(unitSpace, n.LChild.LChild.Size()) +
+				strings.Repeat(" ", size-1) + "┌" +
+				strings.Repeat(unitHen, n.LChild.RChild.Size())
+		}
+		if n.HasRChild() {
+			q.Enqueue(n.RChild)
+			if n.HasLChild() {
+				offsetQ.Enqueue(0) //若有左孩子，则偏移量已经转移至左孩子，无需再转移给右孩子
+			} else { // 不得已转移给右孩子
+				offset += delta
+				delta = 0
+				offsetQ.Enqueue(offset)
+			}
+			nodeRightStr = strings.Repeat(unitHen, n.RChild.LChild.Size()) +
+				strings.Repeat("─", size-1) + "┐" +
+				strings.Repeat(unitSpace, n.RChild.RChild.Size())
+		}
+		if !n.HasChild() { // 叶节点需保存当前的偏移量再加上二个单位的空格，+= 防止连续叶节点导致偏移量丢失
+			delta += offset
+			delta++
+			delta++
+		}
+
+		buf.WriteString(nodeLeftStr)
+		buf.WriteString(fmt.Sprintf("%*v", size, n.Key))
+		buf.WriteString(nodeRightStr)
+		buf.WriteString(unitSpace)
+
 	}
+	buf.WriteString("\n")
 	buf.Flush()
+}
+
+func (n *Node) missLeftNode() int {
+	var count int
+	for !n.IsRoot() {
+		if !n.Parent.HasLChild() {
+			count++
+		}
+		n = n.Parent
+	}
+	if !n.HasLChild() {
+		count++
+	}
+	return count
+}
+
+func (n *Node) belongsLBranch() bool {
+	root := n.Tree.Root
+	for !n.IsRoot() {
+		if n == root.LChild {
+			return true
+		}
+		n = n.Parent
+	}
+	return false
+}
+
+func (n *Node) belongsRBranch() bool {
+	root := n.Tree.Root
+	for !n.IsRoot() {
+		if n == root.RChild {
+			return true
+		}
+		n = n.Parent
+	}
+	return false
+}
+
+func (n *Node) getWidth() (int, int) {
+	if n == nil {
+		return 0, 0
+	}
+	lch := make(chan int)
+	rch := make(chan int)
+	go func() {
+		width := 0
+		for n.LChild != nil {
+			width++
+		}
+		lch <- width
+	}()
+	go func() {
+		width := 0
+		for n.RChild != nil {
+			width++
+		}
+		rch <- width
+	}()
+	lwidth := <-lch
+	rwidth := <-rch
+	return lwidth, rwidth
+}
+
+// func WithPrintNodeStructure(w io.Writer) Option {
+// 	return func(n *Node) {
+// 		size := len(strconv.Itoa(n.Tree.Size))
+// 		buf := bufio.NewWriter(w)
+// 		unitSpace := strings.Repeat(" ", size)
+// 		unitHen := strings.Repeat("─", size)
+// 		nodeLeftStr := strings.Repeat(unitSpace, n.LChild.LChild.Size()) +
+// 			strings.Repeat(" ", size-1) + "┌" +
+// 			strings.Repeat(unitHen, n.LChild.RChild.Size())
+// 		nodeRightStr := strings.Repeat(unitHen, n.RChild.LChild.Size()) +
+// 			strings.Repeat("─", size-1) + "┐" +
+// 			strings.Repeat(unitSpace, n.RChild.RChild.Size())
+// 		buf.WriteString(nodeLeftStr)
+// 		buf.WriteString(fmt.Sprintf("%*v", size, n.Key))
+// 		buf.WriteString(nodeRightStr)
+// 		buf.WriteString(" ")
+// 	}
+// }
+
+// Copy 拷贝二叉树
+func (t *BinTree) Copy() *BinTree {
+	nt := new(BinTree)
+	nt.Root = t.Root.copy(nil, nt)
+	nt.Size = nt.Root.Size()
+	return nt
+}
+
+func (n *Node) copy(p *Node, t *BinTree) *Node {
+	if n == nil {
+		return nil
+	}
+	m := new(Node)
+	m.LChild = n.LChild.copy(m, t)
+	m.RChild = n.RChild.copy(m, t)
+	m.Parent = p
+	m.Key = n.Key
+	m.Data = n.Data
+	m.Height = n.Height
+	m.Tree = t
+	return m
 }

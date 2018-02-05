@@ -922,3 +922,27 @@ func withLevelOrderCopy(q *queue.Queue) Option {
 		}
 	}
 }
+
+// Mirror 返回原二叉树的镜像
+func (t *BinTree) Mirror() {
+	nt := new(BinTree)
+	nr := new(Node)
+	nr.Data = t.Root.Data
+	nr.Key = t.Root.Key
+	nr.Height = t.Root.Height
+	nr.Parent = nil
+	nr.Tree = nt
+	nt.Root = nr
+	nt.Size = t.Size
+	q := queue.NewQueue()
+	q.Enqueue(nr)
+
+	t.TravLevel(withMirror())
+
+}
+
+func withMirror() Option {
+	return func(n *Node) {
+		n.LChild, n.RChild = n.RChild, n.LChild
+	}
+}

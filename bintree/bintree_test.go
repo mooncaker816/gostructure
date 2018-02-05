@@ -745,3 +745,101 @@ func TestPrintR(t *testing.T) {
 	_ = c
 	_ = d
 }
+
+func TestZag(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot("k", nil)
+	i := bt.InsertAsLChild(root, "i", nil)
+	j := bt.InsertAsRChild(root, "j", nil)
+	h := bt.InsertAsRChild(i, "h", nil)
+	b := bt.InsertAsLChild(h, "b", nil)
+	g := bt.InsertAsRChild(h, "g", nil)
+	a := bt.InsertAsRChild(b, "a", nil)
+	e := bt.InsertAsLChild(g, "e", nil)
+	f := bt.InsertAsRChild(g, "f", nil)
+	c := bt.InsertAsLChild(e, "c", nil)
+	d := bt.InsertAsRChild(e, "d", nil)
+	bt.Print()
+	h.zag()
+	fmt.Println("after zag g:")
+	bt.Print()
+	_ = j
+	_ = a
+	_ = f
+	_ = c
+	_ = d
+}
+
+func TestZig(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot("k", nil)
+	i := bt.InsertAsLChild(root, "i", nil)
+	j := bt.InsertAsRChild(root, "j", nil)
+	h := bt.InsertAsRChild(i, "h", nil)
+	b := bt.InsertAsLChild(h, "b", nil)
+	g := bt.InsertAsRChild(h, "g", nil)
+	a := bt.InsertAsRChild(b, "a", nil)
+	e := bt.InsertAsLChild(g, "e", nil)
+	f := bt.InsertAsRChild(g, "f", nil)
+	c := bt.InsertAsLChild(e, "c", nil)
+	d := bt.InsertAsRChild(e, "d", nil)
+	bt.Print()
+	h.zig()
+	fmt.Println("after zig g:")
+	bt.Print()
+	_ = j
+	_ = a
+	_ = f
+	_ = c
+	_ = d
+}
+
+func TestZigZag(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot("k", nil)
+	i := bt.InsertAsLChild(root, "i", nil)
+	j := bt.InsertAsRChild(root, "j", nil)
+	h := bt.InsertAsRChild(i, "h", nil)
+	b := bt.InsertAsLChild(h, "b", nil)
+	g := bt.InsertAsRChild(h, "g", nil)
+	a := bt.InsertAsRChild(b, "a", nil)
+	e := bt.InsertAsLChild(g, "e", nil)
+	f := bt.InsertAsRChild(g, "f", nil)
+	c := bt.InsertAsLChild(e, "c", nil)
+	d := bt.InsertAsRChild(e, "d", nil)
+	bt.Print()
+	b.zag()
+	h.zig()
+	fmt.Println("after zag b zig h:")
+	bt.Print()
+	_ = j
+	_ = a
+	_ = f
+	_ = c
+	_ = d
+}
+
+func TestZigZig(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot("k", nil)
+	i := bt.InsertAsLChild(root, "i", nil)
+	j := bt.InsertAsRChild(root, "j", nil)
+	h := bt.InsertAsRChild(i, "h", nil)
+	b := bt.InsertAsLChild(h, "b", nil)
+	g := bt.InsertAsRChild(h, "g", nil)
+	a := bt.InsertAsRChild(b, "a", nil)
+	e := bt.InsertAsLChild(g, "e", nil)
+	f := bt.InsertAsRChild(g, "f", nil)
+	c := bt.InsertAsLChild(e, "c", nil)
+	d := bt.InsertAsRChild(e, "d", nil)
+	bt.Print()
+	e.zig()
+	g.zig()
+	fmt.Println("after zig e zig g:")
+	bt.Print()
+	_ = j
+	_ = a
+	_ = f
+	_ = c
+	_ = d
+}

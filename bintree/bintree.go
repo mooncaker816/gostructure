@@ -854,7 +854,7 @@ func (n *Node) getWidth() (int, int) {
 // 	}
 // }
 
-// Copy 拷贝二叉树
+// Copy 层次拷贝二叉树递归版
 func (t *BinTree) Copy() *BinTree {
 	nt := new(BinTree)
 	nt.Root = t.Root.copy(nil, nt)
@@ -875,4 +875,50 @@ func (n *Node) copy(p *Node, t *BinTree) *Node {
 	m.Height = n.Height
 	m.Tree = t
 	return m
+}
+
+// CopyI 拷贝二叉树迭代版
+func (t *BinTree) CopyI() *BinTree {
+	nt := new(BinTree)
+	nr := new(Node)
+	nr.Data = t.Root.Data
+	nr.Key = t.Root.Key
+	nr.Height = t.Root.Height
+	nr.Parent = nil
+	nr.Tree = nt
+	nt.Root = nr
+	nt.Size = t.Size
+	q := queue.NewQueue()
+	q.Enqueue(nr)
+
+	t.TravLevel(withLevelOrderCopy(q))
+
+	return nt
+}
+
+func withLevelOrderCopy(q *queue.Queue) Option {
+	return func(n *Node) {
+		mi, _ := q.Dequeue()
+		m := mi.(*Node)
+		if n.HasLChild() {
+			mlc := new(Node)
+			m.LChild = mlc
+			mlc.Parent = m
+			mlc.Tree = mlc.Parent.Tree
+			mlc.Data = n.LChild.Data
+			mlc.Key = n.LChild.Key
+			mlc.Height = n.LChild.Height
+			q.Enqueue(mlc)
+		}
+		if n.HasRChild() {
+			mrc := new(Node)
+			m.RChild = mrc
+			mrc.Parent = m
+			mrc.Tree = mrc.Parent.Tree
+			mrc.Data = n.RChild.Data
+			mrc.Key = n.RChild.Key
+			mrc.Height = n.RChild.Height
+			q.Enqueue(mrc)
+		}
+	}
 }

@@ -668,3 +668,34 @@ func TestCopy(t *testing.T) {
 	_ = c
 	_ = d
 }
+
+func TestCopyI(t *testing.T) {
+	bt := new(BinTree)
+	root := bt.InsertAsRoot("k", nil)
+	i := bt.InsertAsLChild(root, "i", nil)
+	j := bt.InsertAsRChild(root, "j", nil)
+	h := bt.InsertAsRChild(i, "h", nil)
+	b := bt.InsertAsLChild(h, "b", nil)
+	g := bt.InsertAsRChild(h, "g", nil)
+	a := bt.InsertAsRChild(b, "a", nil)
+	e := bt.InsertAsLChild(g, "e", nil)
+	f := bt.InsertAsRChild(g, "f", nil)
+	c := bt.InsertAsLChild(e, "c", nil)
+	d := bt.InsertAsRChild(e, "d", nil)
+	bt.Print()
+	bt2 := bt.CopyI()
+	if bt.Size != bt2.Size {
+		t.Errorf("After copyi size got %v expected %v", bt2.Size, bt.Size)
+	}
+	bt2.Print()
+	bt3 := bt.CopyI()
+	if bt.Size != bt3.Size {
+		t.Errorf("After copyi size got %v expected %v", bt3.Size, bt.Size)
+	}
+	bt3.Print()
+	_ = j
+	_ = a
+	_ = f
+	_ = c
+	_ = d
+}

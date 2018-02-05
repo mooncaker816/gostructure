@@ -946,3 +946,42 @@ func withMirror() Option {
 		n.LChild, n.RChild = n.RChild, n.LChild
 	}
 }
+
+// PrintR 横向打印树的拓扑结构
+func (t *BinTree) PrintR(w io.Writer) {
+	buf := bufio.NewWriter(w)
+	t.Root.printR(buf, "", true)
+	buf.Flush()
+	return
+}
+
+func (n *Node) printR(buf *bufio.Writer, prefix string, isLeft bool) {
+	if n == nil {
+		fmt.Println("Empty Tree!")
+		return
+	}
+	var str string
+	if n.HasRChild() {
+		if isLeft {
+			str = "│   "
+		} else {
+			str = "    "
+		}
+		n.RChild.printR(buf, prefix+str, false)
+	}
+
+	if isLeft {
+		str = "└── "
+	} else {
+		str = "┌── "
+	}
+	buf.WriteString(fmt.Sprintf("%s%s%v\n", prefix, str, n.Key))
+	if n.HasLChild() {
+		if isLeft {
+			str = "    "
+		} else {
+			str = "│   "
+		}
+		n.LChild.printR(buf, prefix+str, true)
+	}
+}

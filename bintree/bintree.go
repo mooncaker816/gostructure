@@ -770,7 +770,10 @@ func (t *BinTree) FprintWithUnitSize(w io.Writer, size int) {
 		buf.WriteString(fmt.Sprintf("%*v", size, n.Key))
 		buf.WriteString(nodeRightStr)
 		buf.WriteString(unitSpace)
-
+		if n.IsLChild() && n.Sibling() == nil {
+			// 缺失左兄弟导致原本兄弟与兄弟之间的一个单位空格缺失，需传给该节点的后代节点
+			buf.WriteString(unitSpace) // 在打印右儿子之前补上该空格
+		}
 	}
 	buf.WriteString("\n")
 	buf.Flush()

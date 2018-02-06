@@ -60,6 +60,8 @@ func (bst *Bst) Remove(key interface{}) bool {
 		return false
 	}
 	bst.removeAt(n)
+	bst.Size--
+	bst.hot.UpdateHeightAbove()
 	return true
 }
 
@@ -70,9 +72,10 @@ func (bst *Bst) removeAt(n *bintree.Node) (succ *bintree.Node) {
 	} else if !n.HasRChild() {
 		succ = n.LChild
 	} else {
-		w = n.Succ()                  // 找到n的直接后继节点w，即右子树中左边最高节点
-		w.Data, w.Key = n.Data, n.Key //交换n和w的数据项
-		succ = w.RChild               //待删节点的右子树
+		w = n.Succ()                    // 找到n的直接后继节点w，即右子树中左边最高节点
+		n.Data, w.Data = w.Data, n.Data //交换n和w的数据项
+		n.Key, w.Key = w.Key, n.Key     //交换n和w的key
+		succ = w.RChild                 //待删节点的右子树
 		if w.Parent == n {
 			w.Parent.RChild = succ
 		} else {

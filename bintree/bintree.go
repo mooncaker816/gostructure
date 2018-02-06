@@ -143,7 +143,8 @@ func (n *Node) updateHeight() {
 	}
 }
 
-func (n *Node) updateHeightAbove() {
+// UpdateHeightAbove 更新该节点以及以上的高度
+func (n *Node) UpdateHeightAbove() {
 	tmp := n
 	for tmp != nil {
 		tmp.updateHeight()
@@ -304,7 +305,7 @@ func (n *Node) TravIn3(opts ...Option) []*Node {
 				n = n.RChild
 				backtrack = false
 			} else {
-				n = n.succ()
+				n = n.Succ()
 				if n == nil {
 					break
 				}
@@ -315,7 +316,7 @@ func (n *Node) TravIn3(opts ...Option) []*Node {
 	return nodes
 }
 
-func (n *Node) succ() *Node {
+func (n *Node) Succ() *Node {
 	s := n
 	if n.HasRChild() {
 		s = n.RChild
@@ -413,7 +414,7 @@ func (n *Node) TravLevel(opts ...Option) []*Node {
 	return nodes
 }
 
-// Remove deletes the node n and the sub tree belongs to it, return count of nodes deleted and successfully deleted or not
+// Remove deletes the node n and the sub tree belongs to it, return count of nodes deleted and Successfully deleted or not
 func (t *BinTree) Remove(n *Node) (int, bool) {
 	if n.Tree != t {
 		return 0, false
@@ -423,7 +424,7 @@ func (t *BinTree) Remove(n *Node) (int, bool) {
 	} else {
 		n.Parent.RChild = nil
 	}
-	n.Parent.updateHeightAbove()
+	n.Parent.UpdateHeightAbove()
 	count := removeAt(n)
 	t.Size -= count
 	return count, true
@@ -435,6 +436,7 @@ func removeAt(n *Node) (count int) {
 	}
 	count = 1
 	count += removeAt(n.LChild) + removeAt(n.RChild)
+	n.LChild, n.RChild, n.Parent, n.Tree = nil, nil, nil, nil
 	return
 }
 
@@ -448,7 +450,7 @@ func (t *BinTree) Secede(n *Node) *BinTree {
 	} else {
 		n.Parent.RChild = nil
 	}
-	n.Parent.updateHeightAbove()
+	n.Parent.UpdateHeightAbove()
 	count := n.Size()
 	t.Size -= count
 	n.Parent = nil
@@ -469,7 +471,7 @@ func (t *BinTree) InsertAsLChild(n *Node, key, data interface{}) *Node {
 	}
 	lc := n.InsertAsLChild(key, data)
 	t.Size++
-	n.updateHeightAbove()
+	n.UpdateHeightAbove()
 	return lc
 }
 
@@ -480,7 +482,7 @@ func (t *BinTree) InsertAsRChild(n *Node, key, data interface{}) *Node {
 	}
 	rc := n.InsertAsRChild(key, data)
 	t.Size++
-	n.updateHeightAbove()
+	n.UpdateHeightAbove()
 	return rc
 }
 
@@ -492,7 +494,7 @@ func (t *BinTree) AttachAsLSubTree(n *Node, st *BinTree) {
 	n.LChild = st.Root
 	n.LChild.Parent = n
 	t.Size += st.Size
-	n.updateHeightAbove()
+	n.UpdateHeightAbove()
 	n.LChild.TravPre1(WithUpdateNodeBelongsTo(t))
 }
 
@@ -504,7 +506,7 @@ func (t *BinTree) AttachAsRSubTree(n *Node, st *BinTree) {
 	n.RChild = st.Root
 	n.RChild.Parent = n
 	t.Size += st.Size
-	n.updateHeightAbove()
+	n.UpdateHeightAbove()
 	n.RChild.TravPre1(WithUpdateNodeBelongsTo(t))
 }
 

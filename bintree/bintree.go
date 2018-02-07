@@ -124,7 +124,8 @@ func (n *Node) InsertAsRChild(key, data interface{}) *Node {
 	return n.RChild
 }
 
-func (n *Node) updateHeight() {
+// UpdateHeight 更新节点的高度
+func (n *Node) UpdateHeight() {
 	var lh, rh int
 	if n.LChild == nil {
 		lh = -1
@@ -147,7 +148,7 @@ func (n *Node) updateHeight() {
 func (n *Node) UpdateHeightAbove() {
 	tmp := n
 	for tmp != nil {
-		tmp.updateHeight()
+		tmp.UpdateHeight()
 		tmp = tmp.Parent
 	}
 }
@@ -989,4 +990,66 @@ func (n *Node) printR(buf *bufio.Writer, prefix string, isLeft bool) {
 		}
 		n.LChild.printR(buf, prefix+str, true)
 	}
+}
+
+// IsBalanced check if n is strictly balanced
+func (n *Node) IsBalanced() bool {
+	var lh, rh int
+	if n.HasLChild() {
+		lh = n.LChild.Height
+	} else {
+		lh = -1
+	}
+	if n.HasRChild() {
+		rh = n.RChild.Height
+	} else {
+		rh = -1
+	}
+	if lh == rh {
+		return true
+	}
+	return false
+}
+
+// IsAvlBalanced check if n is Avl balanced
+func (n *Node) IsAvlBalanced() bool {
+	var lh, rh int
+	if n.HasLChild() {
+		lh = n.LChild.Height
+	} else {
+		lh = -1
+	}
+	if n.HasRChild() {
+		rh = n.RChild.Height
+	} else {
+		rh = -1
+	}
+	if -2 < lh-rh && lh-rh < 2 {
+		return true
+	}
+	return false
+}
+
+// TallerChild 返回高度较高的那个孩子节点，若同高，返回和n同侧的节点
+func (n *Node) TallerChild() *Node {
+	if n.HasLChild() && n.RChild == nil {
+		return n.LChild
+	}
+	if n.HasRChild() && n.LChild == nil {
+		return n.RChild
+	}
+
+	if n.HasBothChild() {
+		if n.LChild.Height < n.RChild.Height {
+			return n.RChild
+		}
+		if n.LChild.Height > n.RChild.Height {
+			return n.LChild
+		}
+		if n.IsLChild() {
+			return n.LChild
+		}
+		return n.RChild
+	}
+	return nil
 }

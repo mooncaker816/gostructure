@@ -89,3 +89,61 @@ func (bst *Bst) removeAt(n *bintree.Node) (succ *bintree.Node) {
 	w.Parent, w.LChild, w.RChild = nil, nil, nil
 	return succ
 }
+
+// Connect34 3+4 重构:
+//	 	   b
+//		a	  c
+//	  T0 T1 T2 T3
+func Connect34(a, b, c, T0, T1, T2, T3 *bintree.Node) *bintree.Node {
+	a.LChild = T0
+	if T0 != nil {
+		T0.Parent = a
+	}
+	a.RChild = T1
+	if T1 != nil {
+		T1.Parent = a
+	}
+	a.UpdateHeight()
+	c.LChild = T2
+	if T2 != nil {
+		T2.Parent = c
+	}
+	c.RChild = T3
+	if T3 != nil {
+		T3.Parent = c
+	}
+	c.UpdateHeight()
+
+	b.LChild = a
+	a.Parent = b
+	b.RChild = c
+	c.Parent = b
+	b.UpdateHeight()
+	return b
+}
+
+func rotateAt(v *bintree.Node) *bintree.Node {
+	if v == nil {
+		panic("can not rotate on nil Node")
+	}
+	p := v.Parent
+	g := p.Parent
+	if p.IsLChild() { // zig
+		if v.IsLChild() { // zig-zig
+			p.Parent = g.Parent
+			return Connect34(v, p, g, v.LChild, v.RChild, p.RChild, g.RChild)
+		}
+		// zig-zag
+		v.Parent = g.Parent
+		return Connect34(p, v, g, p.LChild, v.LChild, v.RChild, g.RChild)
+
+	}
+	// zag
+	if v.IsRChild() { //zag-zag
+		p.Parent = g.Parent
+		return Connect34(g, p, v, g.LChild, p.LChild, v.LChild, v.RChild)
+	}
+	//zag-zig
+	v.Parent = g.Parent
+	return Connect34(g, v, p, g.LChild, v.LChild, v.RChild, p.RChild)
+}

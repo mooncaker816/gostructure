@@ -74,6 +74,19 @@ func TestInsert(t *testing.T) {
 	}
 	bst.TravIn1(bintree.WithPrintNodeKey(os.Stdout))
 	fmt.Println()
+	bst2 := NewBst()
+	bst2.InsertAsRoot(99, nil)
+	bst2.Print()
+	bst2.Insert(80, nil)
+	bst2.Print()
+	bst2.Insert(70, nil)
+	bst2.Print()
+	bst2.Insert(60, nil)
+	bst2.Print()
+	bst2.Insert(69, nil)
+	bst2.Print()
+	bst2.Insert(40, nil)
+	bst2.Print()
 }
 
 func TestRemove(t *testing.T) {

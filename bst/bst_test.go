@@ -33,8 +33,8 @@ func TestSearch(t *testing.T) {
 	if n != rrlc {
 		t.Errorf("Search got %v expected %v", n, rrlc)
 	}
-	if bst.hot != rrlc.Parent {
-		t.Errorf("Search hot got %v expected %v", bst.hot, rrlc.Parent)
+	if bst.Hot != rrlc.Parent {
+		t.Errorf("Search Hot got %v expected %v", bst.Hot, rrlc.Parent)
 	}
 	n = bst.Search(14)
 	if n != nil {
@@ -69,8 +69,8 @@ func TestInsert(t *testing.T) {
 	if bst.Size != oldsize+1 {
 		t.Errorf("Insert size got %v expected %v", bst.Size, oldsize+1)
 	}
-	if bst.hot != n.Parent {
-		t.Errorf("Insert hot got %v expected %v", bst.hot, n.Parent)
+	if bst.Hot != n.Parent {
+		t.Errorf("Insert Hot got %v expected %v", bst.Hot, n.Parent)
 	}
 	bst.TravIn1(bintree.WithPrintNodeKey(os.Stdout))
 	fmt.Println()
@@ -108,4 +108,5 @@ func TestRemove(t *testing.T) {
 	}
 	bst.TravIn1(bintree.WithPrintNodeKey(os.Stdout))
 	fmt.Println()
+	fmt.Println(bst.Root)
 }

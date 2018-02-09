@@ -5,8 +5,8 @@ import "github.com/mooncaker816/gostructure/bintree"
 // Bst 二叉搜索树
 type Bst struct {
 	*bintree.BinTree
-	hot        *bintree.Node // "命中节点"的父节点
-	comparator Comparator
+	Hot        *bintree.Node // "命中节点"的父节点
+	Comparator Comparator
 }
 
 // NewBst 新建Bst
@@ -19,18 +19,18 @@ func NewBstWithComparator(c Comparator) *Bst {
 	return &Bst{new(bintree.BinTree), nil, c}
 }
 
-// Search 查找key为e的节点
+// Search 查找key为e的节点，失败返回nil，该nil已经区分
 func (bst *Bst) Search(key interface{}) *bintree.Node {
-	bst.hot = nil
+	bst.Hot = nil
 	return bst.searchIn(bst.Root, key)
 }
 
 func (bst *Bst) searchIn(n *bintree.Node, key interface{}) *bintree.Node {
-	if n == nil || bst.comparator(key, n.Key) == 0 {
+	if n == nil || bst.Comparator(key, n.Key) == 0 {
 		return n
 	}
-	bst.hot = n
-	if bst.comparator(key, n.Key) == -1 {
+	bst.Hot = n
+	if bst.Comparator(key, n.Key) == -1 {
 		return bst.searchIn(n.LChild, key)
 	}
 
@@ -43,34 +43,52 @@ func (bst *Bst) Insert(key, data interface{}) (node *bintree.Node) {
 	if node := bst.Search(key); node != nil {
 		return node
 	}
-	if bst.comparator(key, bst.hot.Key) == -1 {
-		node = bst.hot.InsertAsLChild(key, data)
+	if bst.Comparator(key, bst.Hot.Key) == -1 {
+		node = bst.Hot.InsertAsLChild(key, data)
 	} else {
-		node = bst.hot.InsertAsRChild(key, data)
+		node = bst.Hot.InsertAsRChild(key, data)
 	}
 	node.UpdateHeightAbove()
 	bst.Size++
 	return node
 }
 
-// Remove 按key删除节点，若成功，则bst.hot为正真删除节点的父节点，若失败，则为查找返回的hot
+// Remove 按key删除节点，若成功，则bst.Hot为正真删除节点的父节点，若失败，则为查找返回的Hot
 func (bst *Bst) Remove(key interface{}) bool {
 	n := bst.Search(key)
 	if n == nil {
 		return false
 	}
-	bst.removeAt(n)
+	bst.RemoveAt(n)
 	bst.Size--
-	bst.hot.UpdateHeightAbove()
+	bst.Hot.UpdateHeightAbove()
 	return true
 }
 
-func (bst *Bst) removeAt(n *bintree.Node) (succ *bintree.Node) {
+func (bst *Bst) RemoveAt(n *bintree.Node) (succ *bintree.Node) {
 	w := n
 	if !n.HasLChild() {
 		succ = n.RChild
+		if n.IsLChild() {
+			n.Parent.LChild = succ
+		}
+		if n.IsRChild() {
+			n.Parent.RChild = succ
+		}
+		if n.IsRoot() {
+			bst.Root = succ
+		}
 	} else if !n.HasRChild() {
 		succ = n.LChild
+		if n.IsLChild() {
+			n.Parent.LChild = succ
+		}
+		if n.IsRChild() {
+			n.Parent.RChild = succ
+		}
+		if n.IsRoot() {
+			bst.Root = succ
+		}
 	} else {
 		w = n.Succ()                    // 找到n的直接后继节点w，即右子树中左边最高节点
 		n.Data, w.Data = w.Data, n.Data //交换n和w的数据项
@@ -82,9 +100,9 @@ func (bst *Bst) removeAt(n *bintree.Node) (succ *bintree.Node) {
 			w.Parent.LChild = succ
 		}
 	}
-	bst.hot = w.Parent
+	bst.Hot = w.Parent
 	if succ != nil {
-		succ.Parent = bst.hot
+		succ.Parent = bst.Hot
 	}
 	w.Parent, w.LChild, w.RChild = nil, nil, nil
 	return succ
@@ -122,7 +140,7 @@ func Connect34(a, b, c, T0, T1, T2, T3 *bintree.Node) *bintree.Node {
 	return b
 }
 
-func rotateAt(v *bintree.Node) *bintree.Node {
+func RotateAt(v *bintree.Node) *bintree.Node {
 	if v == nil {
 		panic("can not rotate on nil Node")
 	}

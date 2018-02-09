@@ -37,8 +37,10 @@ func (avl *Avl) Insert(key, data interface{}) (node *bintree.Node) {
 			x := g.Parent
 			if g.IsLChild() {
 				x.LChild = bst.RotateAt(g.TallerChild().TallerChild())
-			} else {
+			} else if g.IsRChild() {
 				x.RChild = bst.RotateAt(g.TallerChild().TallerChild())
+			} else {
+				avl.Root = bst.RotateAt(g.TallerChild().TallerChild())
 			}
 			break
 		} else {

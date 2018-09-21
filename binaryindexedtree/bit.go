@@ -1,5 +1,8 @@
 package bit
 
+// 如果一个数组有较多的更新操作，且需要查询区间和，可以考虑使用树状数组 binary indexed tree
+// 构建树状数组 O(NlogN)，更新和查询都是 O(logN)
+
 // BIT - Binary Indexed Tree
 type BIT []int
 

@@ -1,125 +1,92 @@
-package bst
+package bst_test
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
-	"github.com/mooncaker816/gostructure/bintree"
+	_ "github.com/mooncaker816/gostructure/bst/splay"
+
+	"github.com/mooncaker816/gostructure/bst"
+
+	_ "github.com/mooncaker816/gostructure/bst/avl"
 )
 
-func TestSearch(t *testing.T) {
-	bst := NewBst()
-	root := bst.InsertAsRoot(16, nil)
-	lc := bst.InsertAsLChild(root, 10, nil)
-	rc := bst.InsertAsRChild(root, 25, nil)
-	llc := bst.InsertAsLChild(lc, 5, nil)
-	rlc := bst.InsertAsRChild(lc, 11, nil)
-	lrc := bst.InsertAsLChild(rc, 19, nil)
-	rrc := bst.InsertAsRChild(rc, 28, nil)
-	lllc := bst.InsertAsLChild(llc, 2, nil)
-	bst.InsertAsRChild(llc, 8, nil)
-	//lrlc := bst.InsertAsLChild(rlc, 2, nil)
-	rrlc := bst.InsertAsRChild(rlc, 15, nil)
-	bst.InsertAsLChild(lrc, 17, nil)
-	bst.InsertAsRChild(lrc, 22, nil)
-	bst.InsertAsLChild(rrc, 27, nil)
-	rrrc := bst.InsertAsRChild(rrc, 37, nil)
-	bst.InsertAsRChild(lllc, 4, nil)
-	bst.InsertAsLChild(rrlc, 13, nil)
-	bst.InsertAsLChild(rrrc, 33, nil)
-	bst.Print()
-	n := bst.Search(15)
-	if n != rrlc {
-		t.Errorf("Search got %v expected %v", n, rrlc)
+func TestAVL(t *testing.T) {
+	at := bst.New(bst.AVL)
+	keys := []int{16, 10, 25, 5, 11, 19, 28, 2, 8, 15, 17, 22, 27, 37, 4, 33}
+	for _, v := range keys {
+		at.Insert(v, nil)
 	}
-	if bst.Hot != rrlc.Parent {
-		t.Errorf("Search Hot got %v expected %v", bst.Hot, rrlc.Parent)
+	at.Print()
+	at.Insert(13, nil)
+	at.Print()
+	at.Insert(30, nil)
+	at.Print()
+	at2 := bst.New(bst.AVL)
+	at2.Insert(100, nil)
+	at2.Print()
+	at2.Insert(95, nil)
+	at2.Print()
+	at2.Insert(85, nil)
+	at2.Print()
+	at2.Insert(75, nil)
+	at2.Print()
+	at2.Insert(65, nil)
+	at2.Print()
+	at2.Insert(55, nil)
+	at2.Print()
+	at2.Insert(45, nil)
+	at2.Print()
+	at2.Insert(35, nil)
+	at2.Print()
+	at2.TravLevel(withprintheight())
+	fmt.Println()
+
+	keys2 := []int{16, 10, 25, 5, 11, 19, 28, 2, 8, 15, 17, 22, 27, 37, 4, 33}
+	at = bst.New(bst.AVL)
+	for _, v := range keys2 {
+		at.Insert(v, nil)
 	}
-	n = bst.Search(14)
-	if n != nil {
-		t.Errorf("Search got %v expected %v", n, nil)
+	at.Print()
+	at.Remove(8)
+	at.Print()
+	at.Remove(16)
+	at.Print()
+	at.Remove(19)
+	at.Print()
+	at.TravLevel(withprintheight())
+	fmt.Println()
+	at2 = bst.New(bst.AVL)
+	at2.Insert(5, nil)
+	at2.Insert(1, nil)
+	at2.Insert(10, nil)
+	at2.Insert(11, nil)
+	at2.Print()
+	at2.Remove(1)
+	at2.Print()
+	at2.TravLevel(withprintheight())
+}
+
+func withprintheight() func(n *bst.Node) {
+	return func(n *bst.Node) {
+		fmt.Printf("%d ", n.Height)
 	}
 }
 
-func TestInsert(t *testing.T) {
-	bst := NewBst()
-	root := bst.InsertAsRoot(16, nil)
-	lc := bst.InsertAsLChild(root, 10, nil)
-	rc := bst.InsertAsRChild(root, 25, nil)
-	llc := bst.InsertAsLChild(lc, 5, nil)
-	rlc := bst.InsertAsRChild(lc, 11, nil)
-	lrc := bst.InsertAsLChild(rc, 19, nil)
-	rrc := bst.InsertAsRChild(rc, 28, nil)
-	lllc := bst.InsertAsLChild(llc, 2, nil)
-	bst.InsertAsRChild(llc, 8, nil)
-	//lrlc := bst.InsertAsLChild(rlc, 2, nil)
-	rrlc := bst.InsertAsRChild(rlc, 15, nil)
-	bst.InsertAsLChild(lrc, 17, nil)
-	bst.InsertAsRChild(lrc, 22, nil)
-	bst.InsertAsLChild(rrc, 27, nil)
-	rrrc := bst.InsertAsRChild(rrc, 37, nil)
-	bst.InsertAsRChild(lllc, 4, nil)
-	bst.InsertAsLChild(rrlc, 13, nil)
-	bst.InsertAsLChild(rrrc, 33, nil)
-	bst.Print()
-	oldsize := bst.Size
-	n := bst.Insert(14, nil)
-	bst.Print()
-	if bst.Size != oldsize+1 {
-		t.Errorf("Insert size got %v expected %v", bst.Size, oldsize+1)
+func TestSplay(t *testing.T) {
+	st := bst.New(bst.Splay)
+	for i := 0; i < 10; i++ {
+		st.Insert(i, nil)
 	}
-	if bst.Hot != n.Parent {
-		t.Errorf("Insert Hot got %v expected %v", bst.Hot, n.Parent)
-	}
-	bst.TravIn1(bintree.WithPrintNodeKey(os.Stdout))
-	fmt.Println()
-	bst2 := NewBst()
-	bst2.InsertAsRoot(99, nil)
-	bst2.Print()
-	bst2.Insert(80, nil)
-	bst2.Print()
-	bst2.Insert(70, nil)
-	bst2.Print()
-	bst2.Insert(60, nil)
-	bst2.Print()
-	bst2.Insert(69, nil)
-	bst2.Print()
-	bst2.Insert(40, nil)
-	bst2.Print()
-}
-
-func TestRemove(t *testing.T) {
-	bst := NewBst()
-	root := bst.InsertAsRoot(16, nil)
-	lc := bst.InsertAsLChild(root, 10, nil)
-	rc := bst.InsertAsRChild(root, 25, nil)
-	llc := bst.InsertAsLChild(lc, 5, nil)
-	rlc := bst.InsertAsRChild(lc, 11, nil)
-	lrc := bst.InsertAsLChild(rc, 19, nil)
-	rrc := bst.InsertAsRChild(rc, 28, nil)
-	lllc := bst.InsertAsLChild(llc, 2, nil)
-	bst.InsertAsRChild(llc, 8, nil)
-	//lrlc := bst.InsertAsLChild(rlc, 2, nil)
-	rrlc := bst.InsertAsRChild(rlc, 15, nil)
-	bst.InsertAsLChild(lrc, 17, nil)
-	bst.InsertAsRChild(lrc, 22, nil)
-	bst.InsertAsLChild(rrc, 27, nil)
-	rrrc := bst.InsertAsRChild(rrc, 37, nil)
-	bst.InsertAsRChild(lllc, 4, nil)
-	bst.InsertAsLChild(rrlc, 13, nil)
-	bst.InsertAsLChild(rrrc, 33, nil)
-	bst.Print()
-	oldsize := bst.Size
-	ok := bst.Remove(16)
-	bst.Print()
-	if ok != true {
-		t.Errorf("Remove got %v expected %v", ok, true)
-	}
-	if bst.Size != oldsize-1 {
-		t.Errorf("Remove size got %v expected %v", bst.Size, oldsize-1)
-	}
-	bst.TravIn1(bintree.WithPrintNodeKey(os.Stdout))
-	fmt.Println()
-	fmt.Println(bst.Root)
+	st.Print()
+	fmt.Println(st.Search(0))
+	st.Print()
+	fmt.Println(st.Search(2))
+	st.Print()
+	fmt.Println(st.Search(8))
+	st.Print()
+	fmt.Println(st.Remove(5))
+	st.Print()
+	fmt.Println(st.Search(5))
+	st.Print()
 }

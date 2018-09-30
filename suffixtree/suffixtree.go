@@ -16,6 +16,7 @@ type Node struct {
 	index      int // suffix index of the original text, only for leaf node, internal node will be -1
 	depth      int
 	suffixLink *Node
+	morePos    [][2]int
 }
 
 func (n *Node) String() string {
@@ -115,6 +116,7 @@ func (st *SufTree) extend(i int) {
 			// 如果超出了该分支的范围，我们就需要更新该分支对应的 node 为新的 activeNode，
 			// 并更新相对的 acitveLength 和 activeEdge，再继续循环直到找到对应的 activeLength 位置的字符
 			if st.walkDown(n) > 0 {
+				n.morePos = append(n.morePos, [2]int{i - n.edgeLen(), i - 1})
 				continue
 			}
 			// 如果已经存在，active.length 加一,继续下一 phase
@@ -161,6 +163,7 @@ func (st *SufTree) setEdge(n *Node) {
 func (st *SufTree) splitEdgeOn(n *Node, i int) *Node {
 	// 缩短原来的 node 为 split，并将它替代 activeNode 中对应的原来更长的 child
 	split := st.newNode(n.start, newEnd(n.start+st.active.length-1))
+	split.morePos = append(split.morePos, [2]int{i - split.edgeLen(), i - 1})
 	st.setEdge(split)
 
 	// 后半部分作为 split 的分支接入
@@ -387,4 +390,46 @@ func (n *Node) getDeepestNonLeaf(deepest *Node) {
 		}
 	}
 	return
+}
+
+// LCS returns the longest common substr of text and pattern
+func (st *SufTree) LCS(p string) string {
+	if p == "" {
+		return ""
+	}
+	lcs := ""
+	currStr := ""
+	curr := st.Root.children[p[0]]
+	for len(p) > 0 {
+		if curr.children[p[0]] == nil {
+			if len(lcs) < len(currStr) {
+				lcs = currStr
+			}
+			p = p[1:]
+			curr = curr.suffixLink
+		}
+		i, j := 0, curr.start
+		for ; i < len(p) && j <= curr.end.end; i, j = i+1, j+1 {
+			if p[i] != text[j] {
+				if len(lcs) < len(currStr) {
+					lcs = currStr
+				}
+				for skip := 0; skip < i; skip++ {
+					curr = curr.suffixLink
+				}
+				p = p[i:]
+				currStr = ""
+				continue
+			}
+		}
+		if i == len(p) {
+			currStr += p
+		}
+		if j == curr.end.end+1 {
+			currStr += p[curr.edgeLen():]
+			p = p[curr.edgeLen():]
+			curr = curr.children[p[0]]
+		}
+	}
+	return lcs
 }

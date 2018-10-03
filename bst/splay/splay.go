@@ -11,16 +11,24 @@ func init() {
 }
 
 type splayTree struct {
-	root *bst.Node
+	root *node
 	comp bst.Comparator
 }
 
 // New returns a new empty splay tree with basic comparator
-func New() bst.BST {
-	return &splayTree{comp: bst.BasicCompare}
+func New(parms ...interface{}) bst.BST {
+	t := new(splayTree)
+	t.comp = bst.BasicCompare
+	for _, p := range parms {
+		switch v := p.(type) {
+		case bst.Comparator:
+			t.comp = v
+		}
+	}
+	return t
 }
 
-func (s *splayTree) Search(key interface{}) (*bst.Node, bool) {
+func (s *splayTree) Search(key interface{}) (bst.Node, bool) {
 	n, result := s.searchIn(s.root, key)
 	if result == 0 {
 		return n, true
@@ -28,20 +36,20 @@ func (s *splayTree) Search(key interface{}) (*bst.Node, bool) {
 	return n, false
 }
 
-func (s *splayTree) searchIn(n *bst.Node, key interface{}) (*bst.Node, int) {
-	switch s.comp(key, n.Key) {
+func (s *splayTree) searchIn(n *node, key interface{}) (*node, int) {
+	switch s.comp(key, n.key) {
 	case 0:
 		s.root = splay(n)
 		return s.root, 0
 	case -1:
-		if n.LChild != nil {
-			return s.searchIn(n.LChild, key)
+		if n.lchild != nil {
+			return s.searchIn(n.lchild, key)
 		}
 		s.root = splay(n)
 		return s.root, -1
 	case 1:
-		if n.RChild != nil {
-			return s.searchIn(n.RChild, key)
+		if n.rchild != nil {
+			return s.searchIn(n.rchild, key)
 		}
 		s.root = splay(n)
 		return s.root, 1
@@ -49,65 +57,65 @@ func (s *splayTree) searchIn(n *bst.Node, key interface{}) (*bst.Node, int) {
 	return nil, 0
 }
 
-func splay(n *bst.Node) *bst.Node {
+func splay(n *node) *node {
 	if n == nil {
 		return nil
 	}
-	for n.Parent != nil && n.Parent.Parent != nil {
-		p := n.Parent
-		g := n.Parent.Parent
-		gp := g.Parent
-		if n.IsLChild() {
-			if p.IsLChild() {
-				g.AttachLChild(p.RChild)
-				p.AttachLChild(n.RChild)
-				p.AttachRChild(g)
-				n.AttachRChild(p)
+	for n.parent != nil && n.parent.parent != nil {
+		p := n.parent
+		g := n.parent.parent
+		gp := g.parent
+		if bst.IsLChild(n) {
+			if bst.IsLChild(p) {
+				bst.AttachLChild(g, p.rchild)
+				bst.AttachLChild(p, n.rchild)
+				bst.AttachRChild(p, g)
+				bst.AttachRChild(n, p)
 			} else {
-				p.AttachLChild(n.RChild)
-				g.AttachRChild(n.LChild)
-				n.AttachLChild(g)
-				n.AttachRChild(p)
+				bst.AttachLChild(p, n.rchild)
+				bst.AttachRChild(g, n.lchild)
+				bst.AttachLChild(n, g)
+				bst.AttachRChild(n, p)
 			}
 		} else {
-			if p.IsLChild() {
-				p.AttachRChild(n.LChild)
-				g.AttachLChild(n.RChild)
-				n.AttachRChild(g)
-				n.AttachLChild(p)
+			if bst.IsLChild(p) {
+				bst.AttachRChild(p, n.lchild)
+				bst.AttachLChild(g, n.rchild)
+				bst.AttachRChild(n, g)
+				bst.AttachLChild(n, p)
 			} else {
-				g.AttachRChild(p.LChild)
-				p.AttachRChild(n.LChild)
-				p.AttachLChild(g)
-				n.AttachLChild(p)
+				bst.AttachRChild(g, p.lchild)
+				bst.AttachRChild(p, n.lchild)
+				bst.AttachLChild(p, g)
+				bst.AttachLChild(n, p)
 			}
 		}
 		if gp != nil {
-			if gp.LChild == g {
-				gp.AttachLChild(n)
+			if gp.lchild == g {
+				bst.AttachLChild(gp, n)
 			} else {
-				gp.AttachRChild(n)
+				bst.AttachRChild(gp, n)
 			}
 		} else {
-			n.Parent = nil
+			n.parent = nil
 		}
 	}
-	if n.Parent != nil {
-		if n.IsLChild() {
-			n.Parent.AttachLChild(n.RChild)
-			n.AttachRChild(n.Parent)
+	if n.parent != nil {
+		if bst.IsLChild(n) {
+			bst.AttachLChild(n.parent, n.rchild)
+			bst.AttachRChild(n, n.parent)
 		} else {
-			n.Parent.AttachRChild(n.LChild)
-			n.AttachLChild(n.Parent)
+			bst.AttachRChild(n.parent, n.lchild)
+			bst.AttachLChild(n, n.parent)
 		}
 	}
-	n.Parent = nil
+	n.parent = nil
 	return n
 }
 
-func (s *splayTree) Insert(key, data interface{}) (*bst.Node, error) {
+func (s *splayTree) Insert(key, data interface{}) (bst.Node, error) {
 	if s.root == nil {
-		s.root = &bst.Node{Key: key, Data: data}
+		s.root = newNode(key, data)
 		return s.root, nil
 	}
 	n, result := s.searchIn(s.root, key)
@@ -115,76 +123,75 @@ func (s *splayTree) Insert(key, data interface{}) (*bst.Node, error) {
 	case 0:
 		return nil, errors.New("insert node with duplicate key")
 	case -1:
-		new := &bst.Node{Key: key, Data: data}
-		new.AttachRChild(n)
-		new.AttachLChild(n.LChild)
-		n.LChild = nil
+		new := newNode(key, data)
+		bst.AttachRChild(new, n)
+		bst.AttachLChild(new, n.lchild)
+		n.lchild = nil
 		s.root = new
 		return new, nil
 	case 1:
-		new := &bst.Node{Key: key, Data: data}
-		new.AttachLChild(n)
-		new.AttachRChild(n.RChild)
-		n.RChild = nil
+		new := newNode(key, data)
+		bst.AttachLChild(new, n)
+		bst.AttachRChild(new, n.rchild)
+		n.rchild = nil
 		s.root = new
 		return new, nil
 	}
 	return nil, nil
 }
 
-func (s *splayTree) Remove(key interface{}) (*bst.Node, error) {
+func (s *splayTree) Remove(key interface{}) (bst.Node, error) {
 	n, result := s.searchIn(s.root, key)
 	if result != 0 {
 		return nil, nil
 	}
 	// 此时待删节点位于 root
-	if !s.root.HasLChild() {
-		s.root = s.root.RChild
+	if !bst.HasLChild(s.root) {
+		s.root = s.root.rchild
 		if s.root != nil {
-			s.root.Parent = nil
+			s.root.parent = nil
 		}
-		n.RChild = nil
-	} else if !s.root.HasRChild() {
-		s.root = s.root.LChild
-		s.root.Parent = nil
-		n.LChild = nil
+		n.rchild = nil
+	} else if !bst.HasRChild(s.root) {
+		s.root = s.root.lchild
+		s.root.parent = nil
+		n.lchild = nil
 	} else {
 		// 临时切除左子树
-		lc := s.root.LChild
-		s.root.LChild = nil
+		lc := s.root.lchild
+		s.root.lchild = nil
 		// 删除 root，右子树成为新的树
-		s.root = s.root.RChild
-		s.root.Parent = nil
-		n.RChild = nil
+		s.root = s.root.rchild
+		s.root.parent = nil
+		n.rchild = nil
 		// 在新树中再次查找原来的值，必然不存在，但会把最小值提升至顶端，且没有左子树
 		// 该最小值一定比之前切除的左子树大，以此值为 root 重新连接原左子树即可
 		s.searchIn(s.root, key)
-		s.root.LChild = lc
-		lc.Parent = s.root
+		s.root.lchild = lc
+		lc.parent = s.root
 	}
 	return n, nil
 }
 
-func (s *splayTree) Root() *bst.Node {
+func (s *splayTree) Root() bst.Node {
 	return s.root
 }
 
 func (s *splayTree) Print() {
-	s.root.PrintWithUnitSize(2)
+	bst.PrintWithUnitSize(s.root, 2)
 }
 
-func (s *splayTree) TravLevel(opts ...bst.Option) {
-	s.root.TravLevel(opts...)
-}
-
-func (s *splayTree) TravPre(opts ...bst.Option) {
-	s.root.TravPre(opts...)
-}
-
-func (s *splayTree) TravIn(opts ...bst.Option) {
-	s.root.TravIn(opts...)
-}
-
-func (s *splayTree) TravPost(opts ...bst.Option) {
-	s.root.TravPost(opts...)
+func (s *splayTree) Walk(o bst.Order, opts ...bst.Option) {
+	switch o {
+	case bst.PreOrder:
+		bst.TravPre(s.root, opts...)
+	case bst.InOrder:
+		bst.TravIn(s.root, opts...)
+	case bst.PostOrder:
+		bst.TravPost(s.root, opts...)
+	case bst.LevelOrder:
+		bst.TravLevel(s.root, opts...)
+	default:
+		panic("unsupported walk order")
+	}
 }

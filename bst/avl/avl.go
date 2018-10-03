@@ -12,17 +12,17 @@ func init() {
 
 // AVL tree
 type avl struct {
-	root *bst.Node
+	root *node
 	comp bst.Comparator
 }
 
-func avlOK(n *bst.Node) bool {
+func avlOK(n *node) bool {
 	lh, rh := -1, -1
-	if n.HasLChild() {
-		lh = n.LChild.Height
+	if bst.HasLChild(n) {
+		lh = n.lchild.height
 	}
-	if n.HasRChild() {
-		rh = n.RChild.Height
+	if bst.HasRChild(n) {
+		rh = n.rchild.height
 	}
 	diff := lh - rh
 	if diff > 1 || diff < -1 {
@@ -32,24 +32,27 @@ func avlOK(n *bst.Node) bool {
 }
 
 // New returns a new empty avl tree with basic comparator
-func New() bst.BST {
-	return &avl{comp: bst.BasicCompare}
+func New(parms ...interface{}) bst.BST {
+	t := new(avl)
+	t.comp = bst.BasicCompare
+	for _, p := range parms {
+		switch v := p.(type) {
+		case bst.Comparator:
+			t.comp = v
+		}
+	}
+	return t
 }
 
-// NewWithComparator returns a new empty avl tree with provided comparator
-func NewWithComparator(comp bst.Comparator) bst.BST {
-	return &avl{comp: comp}
-}
-
-func (avl *avl) Root() *bst.Node {
+func (avl *avl) Root() bst.Node {
 	return avl.root
 }
 
 func (avl *avl) Print() {
-	avl.root.PrintWithUnitSize(2)
+	bst.PrintWithUnitSize(avl.root, 2)
 }
 
-func (avl *avl) Search(key interface{}) (*bst.Node, bool) {
+func (avl *avl) Search(key interface{}) (bst.Node, bool) {
 	n, result := avl.searchIn(avl.root, key)
 	if result == 0 {
 		return n, true
@@ -57,18 +60,18 @@ func (avl *avl) Search(key interface{}) (*bst.Node, bool) {
 	return n, false
 }
 
-func (avl *avl) searchIn(n *bst.Node, key interface{}) (*bst.Node, int) {
-	switch avl.comp(key, n.Key) {
+func (avl *avl) searchIn(n *node, key interface{}) (*node, int) {
+	switch avl.comp(key, n.key) {
 	case 0:
 		return n, 0
 	case -1:
-		if n.HasLChild() {
-			return avl.searchIn(n.LChild, key)
+		if bst.HasLChild(n) {
+			return avl.searchIn(n.lchild, key)
 		}
 		return n, -1
 	case 1:
-		if n.HasRChild() {
-			return avl.searchIn(n.RChild, key)
+		if bst.HasRChild(n) {
+			return avl.searchIn(n.rchild, key)
 		}
 		return n, 1
 	default:
@@ -76,9 +79,9 @@ func (avl *avl) searchIn(n *bst.Node, key interface{}) (*bst.Node, int) {
 	}
 }
 
-func (avl *avl) Insert(key, data interface{}) (*bst.Node, error) {
+func (avl *avl) Insert(key, data interface{}) (bst.Node, error) {
 	if avl.root == nil {
-		avl.root = &bst.Node{Key: key, Data: data}
+		avl.root = newNode(key, data)
 		return avl.root, nil
 	}
 	n, result := avl.searchIn(avl.root, key)
@@ -86,18 +89,18 @@ func (avl *avl) Insert(key, data interface{}) (*bst.Node, error) {
 	case 0:
 		return nil, errors.New("insert node with duplicate key")
 	case -1:
-		new := &bst.Node{Key: key, Data: data}
-		n.AttachLChild(new)
-		if !n.HasRChild() {
-			n.UpdateHeightAbove()
+		new := newNode(key, data)
+		bst.AttachLChild(n, new)
+		if !bst.HasRChild(n) {
+			n.updateHeightAbove()
 		}
 		avl.reBalance(n, true)
 		return new, nil
 	case 1:
-		new := &bst.Node{Key: key, Data: data}
-		n.AttachRChild(new)
-		if !n.HasLChild() {
-			n.UpdateHeightAbove()
+		new := newNode(key, data)
+		bst.AttachRChild(n, new)
+		if !bst.HasLChild(n) {
+			n.updateHeightAbove()
 		}
 		avl.reBalance(n, true)
 		return new, nil
@@ -105,21 +108,21 @@ func (avl *avl) Insert(key, data interface{}) (*bst.Node, error) {
 	return nil, nil
 }
 
-func (avl *avl) reBalance(hot *bst.Node, insert bool) {
-	for g := hot; g != nil; g = g.Parent {
+func (avl *avl) reBalance(hot *node, insert bool) {
+	for g := hot; g != nil; g = g.parent {
 		if !avlOK(g) {
-			x := g.Parent
-			p := g.TallerChild()
-			v := p.TallerChild()
-			tmp := new(bst.Node)
-			if g.IsLChild() {
-				x.LChild = rotateAt(v)
-				tmp = x.LChild
-			} else if g.IsRChild() {
-				x.RChild = rotateAt(v)
-				tmp = x.RChild
+			x := g.parent
+			p := g.tallerChild()
+			v := p.tallerChild()
+			var tmp *node
+			if bst.IsLChild(g) {
+				x.lchild = rotateAndUpdateHeight(v)
+				tmp = x.lchild
+			} else if bst.IsRChild(g) {
+				x.rchild = rotateAndUpdateHeight(v)
+				tmp = x.rchild
 			} else {
-				avl.root = rotateAt(v)
+				avl.root = rotateAndUpdateHeight(v)
 				tmp = avl.root
 			}
 			if insert {
@@ -128,158 +131,41 @@ func (avl *avl) reBalance(hot *bst.Node, insert bool) {
 				g = tmp
 			}
 		} else {
-			g.UpdateHeight()
+			updateHeight(g)
 		}
 	}
 }
 
-// connect34 connect bst.Nodes as below
-//	 	   b
-//		a	  c
-//	  T0 T1 T2 T3
-func connect34(a, b, c, t1, t2, t3, t4 *bst.Node) *bst.Node {
-	a.LChild = t1
-	if t1 != nil {
-		t1.Parent = a
-	}
-	a.RChild = t2
-	if t2 != nil {
-		t2.Parent = a
-	}
-	a.UpdateHeight()
-	c.LChild = t3
-	if t3 != nil {
-		t3.Parent = c
-	}
-	c.RChild = t4
-	if t4 != nil {
-		t4.Parent = c
-	}
-	c.UpdateHeight()
-	b.LChild = a
-	b.RChild = c
-	a.Parent = b
-	c.Parent = b
-	b.UpdateHeight()
-	return b
+func rotateAndUpdateHeight(n *node) *node {
+	_, b, _ := bst.RotateAt(n, updateHeight)
+	return b.(*node)
 }
 
-func rotateAt(v *bst.Node) *bst.Node {
-	p := v.Parent
-	g := p.Parent
-	if v.IsLChild() {
-		if p.IsLChild() {
-			p.Parent = g.Parent
-			return connect34(v, p, g, v.LChild, v.RChild, p.RChild, g.RChild)
-		}
-		if p.IsRChild() {
-			v.Parent = g.Parent
-			return connect34(g, v, p, g.LChild, v.LChild, v.RChild, p.RChild)
-		}
-	}
-	if v.IsRChild() {
-		if p.IsLChild() {
-			v.Parent = g.Parent
-			return connect34(p, v, g, p.LChild, v.LChild, v.RChild, g.RChild)
-		}
-		if p.IsRChild() {
-			p.Parent = g.Parent
-			return connect34(g, p, v, g.LChild, p.LChild, v.LChild, v.RChild)
-		}
-	}
-	return nil
-}
-
-func (avl *avl) Remove(key interface{}) (hot *bst.Node, err error) {
+func (avl *avl) Remove(key interface{}) (bst.Node, error) {
 	n, result := avl.searchIn(avl.root, key)
 	if result != 0 {
 		return nil, nil
 	}
-	hot, _ = avl.removeAt(n)
-	avl.reBalance(hot, false)
-	return hot, nil
-}
-
-func (avl *avl) removeAt(n *bst.Node) (hot *bst.Node, err error) {
-	// n has both left and right subtree
-	if n.HasLChild() && n.HasRChild() {
-		succ := n.Successor()
-		bst.SwapKeyData(n, succ)
-		hot = succ.Parent
-		if succ == n.RChild {
-			hot = n
-			if succ.HasRChild() {
-				succ.RChild.Parent = n
-			}
-			n.RChild = succ.RChild
-		} else if succ.HasRChild() {
-			// hot = succ.Parent
-			succ.RChild.Parent = hot
-			hot.LChild = succ.RChild
-		} else {
-			// hot = succ.Parent
-			hot.LChild = nil
-		}
-		succ.Parent, succ.LChild, succ.RChild = nil, nil, nil
-		hot.UpdateHeightAbove()
-		return hot, nil
+	hot, _ := bst.RemoveAt(n, avl.root)
+	hot0, ok := hot.(*node)
+	if ok {
+		hot0.updateHeightAbove()
+		avl.reBalance(hot0, false)
 	}
-	// n only has left subtree
-	if n.HasLChild() && !n.HasRChild() {
-		if n.IsLChild() {
-			n.Parent.LChild = n.LChild
-		} else if n.IsRChild() {
-			n.Parent.RChild = n.LChild
-		} else {
-			avl.root = n.LChild
-		}
-		n.LChild.Parent = n.Parent
-		hot = n.Parent
-		n.Parent, n.LChild, n.RChild = nil, nil, nil
-		hot.UpdateHeightAbove()
-		return hot, nil
+	return hot0, nil
+}
+
+func (avl *avl) Walk(o bst.Order, opts ...bst.Option) {
+	switch o {
+	case bst.PreOrder:
+		bst.TravPre(avl.root, opts...)
+	case bst.InOrder:
+		bst.TravIn(avl.root, opts...)
+	case bst.PostOrder:
+		bst.TravPost(avl.root, opts...)
+	case bst.LevelOrder:
+		bst.TravLevel(avl.root, opts...)
+	default:
+		panic("unsupported walk order")
 	}
-	// n only has right subtree
-	if !n.HasLChild() && n.HasRChild() {
-		if n.IsLChild() {
-			n.Parent.LChild = n.RChild
-		} else if n.IsRChild() {
-			n.Parent.RChild = n.RChild
-		} else {
-			avl.root = n.RChild
-		}
-		n.RChild.Parent = n.Parent
-		hot = n.Parent
-		n.Parent, n.LChild, n.RChild = nil, nil, nil
-		hot.UpdateHeightAbove()
-		return hot, nil
-	}
-	// n is leaf(or single root)
-	if n.IsLChild() {
-		n.Parent.LChild = nil
-	} else if n.IsRChild() {
-		n.Parent.RChild = nil
-	} else {
-		avl.root = nil
-	}
-	hot = n.Parent
-	n.Parent, n.LChild, n.RChild = nil, nil, nil
-	hot.UpdateHeightAbove()
-	return hot, nil
-}
-
-func (avl *avl) TravLevel(opts ...bst.Option) {
-	avl.root.TravLevel(opts...)
-}
-
-func (avl *avl) TravPre(opts ...bst.Option) {
-	avl.root.TravPre(opts...)
-}
-
-func (avl *avl) TravIn(opts ...bst.Option) {
-	avl.root.TravIn(opts...)
-}
-
-func (avl *avl) TravPost(opts ...bst.Option) {
-	avl.root.TravPost(opts...)
 }

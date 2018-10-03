@@ -1,252 +1,188 @@
 package bst
 
-import (
-	"bufio"
-	"fmt"
-	"io"
-	"os"
-	"strconv"
-)
+import "reflect"
 
-type Node struct {
-	LChild *Node
-	RChild *Node
-	Parent *Node
-	Key    interface{}
-	Data   interface{}
-	Height int
+// Node identifies a BST Node
+type Node interface {
+	LChild() Node
+	RChild() Node
+	Parent() Node
+	SetLChild(Node)
+	SetRChild(Node)
+	SetParent(Node)
+	Key() interface{}
+	Data() interface{}
+	SetKey(interface{})
+	SetData(interface{})
+	Height() int
+	Color() string
 }
 
-// type BinTree struct {
-// 	Root *Node
-// }
-
-func newSingleNode(key, data interface{}) *Node {
-	return &Node{Key: key, Data: data}
+func IsNil(n Node) bool {
+	if n == nil {
+		return true
+	}
+	return reflect.ValueOf(n).IsNil()
 }
 
-// // NewBinTree creates a bintree with a single root node
-// func NewBinTree(root *Node) *BinTree {
-// 	return &BinTree{Root: root}
-// }
+// IsRoot returns whether n is root node
+func IsRoot(n Node) bool { return IsNil(n.Parent()) }
 
-// HasLChild checks if n has left child
-func (n *Node) HasLChild() bool { return n.LChild != nil }
+// IsLChild returns whether n is a left child node
+func IsLChild(n Node) bool { return !IsRoot(n) && n == n.Parent().LChild() }
 
-// HasRChild checks if n has right child
-func (n *Node) HasRChild() bool { return n.RChild != nil }
+// IsRChild returns whether n is a right child node
+func IsRChild(n Node) bool { return !IsRoot(n) && n == n.Parent().RChild() }
 
-// IsLChild checks if n is a left child
-func (n *Node) IsLChild() bool {
-	return !n.IsRoot() && n == n.Parent.LChild
+// HasLChild returns whether n has left child
+func HasLChild(n Node) bool { return !IsNil(n.LChild()) }
+
+// HasRChild returns whether n has right child
+func HasRChild(n Node) bool { return !IsNil(n.RChild()) }
+
+// IsLeaf returns whether n is leaf node
+func IsLeaf(n Node) bool {
+	if HasLChild(n) || HasRChild(n) {
+		return false
+	}
+	return true
 }
 
-// IsRChild checks if n is a right child
-func (n *Node) IsRChild() bool {
-	return !n.IsRoot() && n == n.Parent.RChild
-}
-
-// IsRoot checks if n is root
-func (n *Node) IsRoot() bool { return n.Parent == nil }
-
-// Sibling gets n's sibling if exists
-func (n *Node) Sibling() *Node {
-	if n.IsRoot() {
+// Sibling returns sibling of n
+func Sibling(n Node) Node {
+	if IsRoot(n) {
 		return nil
 	}
-	if n.IsLChild() {
-		return n.Parent.RChild
+	if IsLChild(n) {
+		return n.Parent().RChild()
 	}
-	return n.Parent.LChild
+	return n.Parent().LChild()
 }
 
-func (n *Node) AttachRChild(v *Node) {
-	n.RChild = v
-	if v != nil {
-		v.Parent = n
-	}
+// AttachRChild connects rc as right child of n
+func AttachRChild(n, rc Node) {
+	n.SetRChild(rc)
+	rc.SetParent(n)
 }
 
-func (n *Node) AttachLChild(v *Node) {
-	n.LChild = v
-	if v != nil {
-		v.Parent = n
-	}
+// AttachLChild connects lc as left child of n
+func AttachLChild(n, lc Node) {
+	n.SetLChild(lc)
+	lc.SetParent(n)
 }
 
-// AddLChild generates a new Node with the provided key and data, then adds to Node n as left child
-func (n *Node) AddLChild(key, data interface{}) *Node {
-	if n.HasLChild() {
-		panic("node already has left child")
-	}
-	newNode := newSingleNode(key, data)
-	n.LChild = newNode
-	newNode.Parent = n
-	if !n.HasRChild() {
-		n.UpdateHeightAbove()
-	}
-	return newNode
-}
-
-// AddRChild generates a new Node with the provided key and data, then adds to Node n as right child
-func (n *Node) AddRChild(key, data interface{}) *Node {
-	if n.HasRChild() {
-		panic("node already has right child")
-	}
-	newNode := newSingleNode(key, data)
-	n.RChild = newNode
-	newNode.Parent = n
-	if !n.HasLChild() {
-		n.UpdateHeightAbove()
-	}
-	return newNode
-}
-
-// AttachLSubTree will add left sub tree to n
-func (n *Node) AttachLSubTree(left *Node) {
-	if n.HasLChild() {
-		panic("node already has left sub tree")
-	}
-	n.LChild = left
-	left.Parent = n
-	n.UpdateHeightAbove()
-}
-
-// AttachRSubTree will add right sub tree to n
-func (n *Node) AttachRSubTree(right *Node) {
-	if n.HasRChild() {
-		panic("node already has right sub tree")
-	}
-	n.RChild = right
-	right.Parent = n
-	n.UpdateHeightAbove()
-}
-
-func (n *Node) UpdateHeight() {
-	n.Height = n.maxHeightOfChildren() + 1
-}
-
-// UpdateHeightAbove updates height info for all the related nodes
-func (n *Node) UpdateHeightAbove() {
-	for max := n.maxHeightOfChildren(); n != nil && n.Height != max+1; {
-		n.Height = max + 1
-		n = n.Parent
-	}
-}
-
-func (n *Node) maxHeightOfChildren() int {
-	lH, rH := -1, -1
-	if n.HasLChild() {
-		lH = n.LChild.Height
-	}
-	if n.HasRChild() {
-		rH = n.RChild.Height
-	}
-	return max(lH, rH)
-}
-
-func max(a, b int) int {
-	if a >= b {
-		return a
-	}
-	return b
-}
-
-// Detach removes the whole sub tree
-func (n *Node) Detach() {
-	if n.IsRoot() {
-		return
-	}
-	if n.IsLChild() {
-		n.Parent.LChild = nil
-		n.Parent.UpdateHeightAbove()
-		n.Parent = nil
-		return
-	}
-	n.Parent.RChild = nil
-	n.Parent.UpdateHeightAbove()
-	n.Parent = nil
-}
-
-// Size returns the count of sub tree's nodes
-func (n *Node) Size() int {
-	if n == nil {
+// Size returns the total node counts of the subtree rooted on n
+func Size(n Node) int {
+	if IsNil(n) {
 		return 0
 	}
 	count := 1
-	if n.HasLChild() {
-		count += n.LChild.Size()
+	if HasLChild(n) {
+		count += Size(n.LChild())
 	}
-	if n.HasRChild() {
-		count += n.RChild.Size()
+	if HasRChild(n) {
+		count += Size(n.RChild())
 	}
 	return count
 }
 
-// Level returns the level of the node in the tree, root is level 0
-func (n *Node) Level() int {
+// Level returns the level where the node lays on
+func Level(n Node) int {
 	l := 0
-	for !n.IsRoot() {
+	for !IsNil(n) && !IsRoot(n) {
 		l++
-		n = n.Parent
+		n = n.Parent()
 	}
 	return l
 }
 
-// Option is a useful function to dealing with the node during the traversal of the tree
-type Option func(n *Node)
+// Successor returns the successor of n
+func Successor(n Node) Node {
+	if HasRChild(n) {
+		return subTreeMin(n.RChild())
+	}
+	for IsRChild(n) {
+		n = n.Parent()
+	}
+	return n.Parent()
+}
 
-// TravPre provides the pre-order traversal
-func (n *Node) TravPre(opts ...Option) {
+// Predecessor returns the predecessor of n
+func Predecessor(n Node) Node {
+	if HasLChild(n) {
+		return subTreeMax(n.LChild())
+	}
+	for IsLChild(n) {
+		n = n.Parent()
+	}
+	return n.Parent()
+}
+
+func subTreeMin(n Node) Node {
+	for HasLChild(n) {
+		n = n.LChild()
+	}
+	return n
+}
+
+func subTreeMax(n Node) Node {
+	for HasRChild(n) {
+		n = n.RChild()
+	}
+	return n
+}
+
+// TravPre walks the subtree rooted on n by pre-order
+func TravPre(n Node, opts ...Option) {
 	for _, opt := range opts {
 		opt(n)
 	}
-	if n.HasLChild() {
-		n.LChild.TravPre(opts...)
+	if HasLChild(n) {
+		TravPre(n.LChild(), opts...)
 	}
-	if n.HasRChild() {
-		n.RChild.TravPre(opts...)
+	if HasRChild(n) {
+		TravPre(n.RChild(), opts...)
 	}
 }
 
-// TravIn provides the in-order traversal
-func (n *Node) TravIn(opts ...Option) {
-	if n.HasLChild() {
-		n.LChild.TravIn(opts...)
+// TravIn walks the subtree rooted on n by in-order
+func TravIn(n Node, opts ...Option) {
+	if HasLChild(n) {
+		TravIn(n.LChild(), opts...)
 	}
 	for _, opt := range opts {
 		opt(n)
 	}
-	if n.HasRChild() {
-		n.RChild.TravIn(opts...)
+	if HasRChild(n) {
+		TravIn(n.RChild(), opts...)
 	}
 }
 
-// TravPost provides the post-order traversal
-func (n *Node) TravPost(opts ...Option) {
-	if n.HasLChild() {
-		n.LChild.TravIn(opts...)
+// TravPost walks the subtree rooted on n by post-order
+func TravPost(n Node, opts ...Option) {
+	if HasLChild(n) {
+		TravIn(n.LChild(), opts...)
 	}
-	if n.HasRChild() {
-		n.RChild.TravIn(opts...)
+	if HasRChild(n) {
+		TravIn(n.RChild(), opts...)
 	}
 	for _, opt := range opts {
 		opt(n)
 	}
 }
 
-// TravLevel provides the level-order traversal
-func (n *Node) TravLevel(opts ...Option) {
-	queue := make([]*Node, 0, n.Size())
+// TravLevel walks the subtree rooted on n by level-order
+func TravLevel(n Node, opts ...Option) {
+	queue := make([]Node, 0, Size(n))
 	queue = append(queue, n)
 	for len(queue) > 0 {
 		visitNode := queue[0]
 		queue = queue[1:]
-		if visitNode.HasLChild() {
-			queue = append(queue, visitNode.LChild)
+		if HasLChild(visitNode) {
+			queue = append(queue, visitNode.LChild())
 		}
-		if visitNode.HasRChild() {
-			queue = append(queue, visitNode.RChild)
+		if HasRChild(visitNode) {
+			queue = append(queue, visitNode.RChild())
 		}
 		for _, opt := range opts {
 			opt(visitNode)
@@ -254,221 +190,139 @@ func (n *Node) TravLevel(opts ...Option) {
 	}
 }
 
-// Print 以子树节点个数的位数为一个基本单元的长度，打印子树的拓扑结构到标准输出
-func (n *Node) Print() {
-	n.PrintWithUnitSize(len(strconv.Itoa(n.Size())))
+// RotateAt use connect 3+4 strategy to reconstruct v,p,g which are all existing
+func RotateAt(v Node, opts ...Option) (a, b, c Node) {
+	p := v.Parent()
+	g := p.Parent()
+	if IsLChild(v) {
+		if IsLChild(p) {
+			p.SetParent(g.Parent())
+			connect34(v, p, g, v.LChild(), v.RChild(), p.RChild(), g.RChild(), opts...)
+			return v, p, g
+		}
+		if IsRChild(p) {
+			v.SetParent(g.Parent())
+			connect34(g, v, p, g.LChild(), v.LChild(), v.RChild(), p.RChild(), opts...)
+			return g, v, p
+		}
+	}
+	if IsRChild(v) {
+		if IsLChild(p) {
+			v.SetParent(g.Parent())
+			connect34(p, v, g, p.LChild(), v.LChild(), v.RChild(), g.RChild(), opts...)
+			return p, v, g
+		}
+		if IsRChild(p) {
+			p.SetParent(g.Parent())
+			connect34(g, p, v, g.LChild(), p.LChild(), v.LChild(), v.RChild(), opts...)
+			return g, p, v
+		}
+	}
+	return nil, nil, nil
 }
 
-// Fprint 以树节点个数的位数为一个基本单元的长度，打印子树的拓扑结构到io.Writer
-func (n *Node) Fprint(w io.Writer) {
-	n.FprintWithUnitSize(w, len(strconv.Itoa(n.Size())))
+// connect34 connect bst.Nodes as below
+//	 	   b
+//		a	  c
+//	  T1 T2 T3 T4
+func connect34(a, b, c, t1, t2, t3, t4 Node, opts ...Option) {
+	AttachLChild(a, t1)
+	AttachRChild(a, t2)
+	for _, o := range opts {
+		o(a)
+	}
+
+	AttachLChild(c, t3)
+	AttachRChild(c, t4)
+	for _, o := range opts {
+		o(c)
+	}
+
+	AttachLChild(b, a)
+	AttachRChild(b, c)
+	for _, o := range opts {
+		o(b)
+	}
 }
 
-// PrintWithUnitSize 以指定的长度为一个基本单元，打印子树的拓扑结构到标准输出
-func (n *Node) PrintWithUnitSize(size int) {
-	n.FprintWithUnitSize(os.Stdout, size)
-}
-
-// FprintWithUnitSize 以指定的长度为一个基本单元，打印子树的拓扑结构到io.Writer，树宽为节点数
-func (n *Node) FprintWithUnitSize(w io.Writer, size int) {
-	buf := bufio.NewWriter(w)
-	if n == nil {
-		buf.WriteString("Empty tree!")
-		buf.Flush()
-		return
-	}
-	if size <= 0 {
-		panic("unit size can not be less than 1")
-	}
-
-	total := n.Size()
-	q := make([]nodePos, 0, total)
-	prevlevel := 0
-	line := make([]rune, total*size+1)
-	for i := range line {
-		line[i] = ' '
-	}
-	mid := n.LChild.Size()
-	left, right := mid, mid
-	if n.LChild != nil {
-		left = mid - n.LChild.RChild.Size() - 1
-	}
-	if n.RChild != nil {
-		right = mid + n.RChild.LChild.Size() + 1
-	}
-	q = append(q, nodePos{n, left, mid, right})
-	for len(q) > 0 {
-		np := q[0]
-		q = q[1:]
-		n := np.node
-		if l := n.Level(); prevlevel != l {
-			prevlevel = l
-			buf.WriteString("\n")
-			for i, r := range line {
-				buf.WriteRune(r)
-				line[i] = ' '
+// RemoveAt removes "node n" and returns the exact removed node's parent as hot and the replacement node as r
+func RemoveAt(n, root Node) (hot, r Node) {
+	// n has both left and right subtree
+	if HasLChild(n) && HasRChild(n) {
+		succ := Successor(n)
+		swapKeyData(n, succ)
+		hot = succ.Parent()
+		r = succ.RChild()
+		if succ == n.RChild() {
+			hot = n
+			if HasRChild(succ) {
+				succ.RChild().SetParent(n)
 			}
+			n.SetRChild(succ.RChild())
+		} else if HasRChild(succ) {
+			// hot = succ.parent
+			succ.RChild().SetParent(hot)
+			hot.SetLChild(succ.RChild())
+		} else {
+			// hot = succ.parent
+			hot.SetLChild(nil)
 		}
-
-		np.fillNode(line, size)
-
-		if n.HasLChild() {
-			left, mid, right = np.computeLChildPos()
-			q = append(q, nodePos{n.LChild, left, mid, right})
+		release(succ)
+		return hot, r
+	}
+	// n only has left subtree
+	if HasLChild(n) && !HasRChild(n) {
+		if IsLChild(n) {
+			n.Parent().SetLChild(n.LChild())
+		} else if IsRChild(n) {
+			n.Parent().SetRChild(n.LChild())
+		} else {
+			root = n.LChild()
 		}
-		if n.HasRChild() {
-			left, mid, right = np.computeRChildPos()
-			q = append(q, nodePos{n.RChild, left, mid, right})
+		n.LChild().SetParent(n.Parent())
+		hot = n.Parent()
+		r = n.LChild()
+		release(n)
+		return hot, r
+	}
+	// n only has right subtree
+	if !HasLChild(n) && HasRChild(n) {
+		if IsLChild(n) {
+			n.Parent().SetLChild(n.RChild())
+		} else if IsRChild(n) {
+			n.Parent().SetRChild(n.RChild())
+		} else {
+			root = n.RChild()
 		}
+		n.RChild().SetParent(n.Parent())
+		hot = n.Parent()
+		r = n.RChild()
+		release(n)
+		return hot, r
 	}
-	buf.WriteString("\n")
-	for _, r := range line {
-		buf.WriteRune(r)
-	}
-	buf.WriteString("\n")
-	buf.Flush()
-}
-
-func (np nodePos) fillNode(line []rune, size int) {
-	if np.node.HasLChild() {
-		i := np.left * size
-		// for ; i < np.left*size; i++ {
-		// 	line[i] = ' '
-		// }
-		for ; i < np.left*size+size-1; i++ {
-			line[i] = ' '
-		}
-		line[i] = '┌'
-		i++
-		for ; i < np.mid*size; i++ {
-			line[i] = '─'
-		}
-	}
-	i := np.mid * size
-	for _, r := range fmt.Sprintf("%*v", size, np.node.Key) {
-		line[i] = r
-		i++
-	}
-	if np.node.HasRChild() {
-		// for ; i < np.right*size-size; i++ {
-		// 	line[i] = '─'
-		// }
-		for ; i < np.right*size+size-1; i++ {
-			line[i] = '─'
-		}
-		line[i] = '┐'
-	}
-}
-
-type nodePos struct {
-	node             *Node
-	left, mid, right int
-}
-
-func (np nodePos) computeLChildPos() (left, mid, right int) {
-	if np.node == nil {
-		return
-	}
-	if np.node.LChild == nil {
-		return mid, mid, mid
-	}
-	mid = np.mid - np.node.LChild.RChild.Size() - 1
-
-	if np.node.LChild.LChild == nil {
-		left = mid
+	// n is leaf(or single root)
+	if IsLChild(n) {
+		n.Parent().SetLChild(nil)
+	} else if IsRChild(n) {
+		n.Parent().SetRChild(nil)
 	} else {
-		left = mid - np.node.LChild.LChild.RChild.Size() - 1
+		root = nil
 	}
-	if np.node.LChild.RChild == nil {
-		right = mid
-	} else {
-		right = mid + np.node.LChild.RChild.LChild.Size() + 1
-	}
-	return
+	hot = n.Parent()
+	release(n)
+	return hot, r
 }
 
-func (np nodePos) computeRChildPos() (left, mid, right int) {
-	if np.node == nil {
-		return
-	}
-	if np.node.RChild == nil {
-		return mid, mid, mid
-	}
-	mid = np.mid + np.node.RChild.LChild.Size() + 1
-
-	if np.node.RChild.LChild == nil {
-		left = mid
-	} else {
-		left = mid - np.node.RChild.LChild.RChild.Size() - 1
-	}
-	if np.node.RChild.RChild == nil {
-		right = mid
-	} else {
-		right = mid + np.node.RChild.RChild.LChild.Size() + 1
-	}
-	return
+func swapKeyData(n1, n2 Node) {
+	tmpKey, tmpData := n1.Key(), n1.Data()
+	n1.SetKey(n2.Key())
+	n1.SetData(n2.Data())
+	n2.SetKey(tmpKey)
+	n2.SetData(tmpData)
 }
 
-// TallerChild 返回高度较高的那个孩子节点，若同高，返回和n同侧的节点
-func (n *Node) TallerChild() *Node {
-	if n.HasLChild() && n.RChild == nil {
-		return n.LChild
-	}
-	if n.HasRChild() && n.LChild == nil {
-		return n.RChild
-	}
-
-	if n.HasLChild() && n.HasRChild() {
-		if n.LChild.Height < n.RChild.Height {
-			return n.RChild
-		}
-		if n.LChild.Height > n.RChild.Height {
-			return n.LChild
-		}
-		if n.IsLChild() {
-			return n.LChild
-		}
-		return n.RChild
-	}
-	return nil
-}
-
-func subTreeMin(n *Node) *Node {
-	for n.HasLChild() {
-		n = n.LChild
-	}
-	return n
-}
-
-func subTreeMax(n *Node) *Node {
-	for n.HasRChild() {
-		n = n.RChild
-	}
-	return n
-}
-
-// Successor returns the next larger node of n if it exists.
-func (n *Node) Successor() *Node {
-	if n.HasRChild() {
-		return subTreeMin(n.RChild)
-	}
-	for n.IsRChild() {
-		n = n.Parent
-	}
-	return n.Parent
-}
-
-// Predecessor returns the prev smaller node of n if it exists.
-func (n *Node) Predecessor() *Node {
-	if n.HasLChild() {
-		return subTreeMax(n.LChild)
-	}
-	for n.IsLChild() {
-		n = n.Parent
-	}
-	return n.Parent
-}
-
-func SwapKeyData(n1, n2 *Node) {
-	n1.Key, n1.Data, n2.Key, n2.Data = n2.Key, n2.Data, n1.Key, n1.Data
+func release(n Node) {
+	n.SetParent(nil)
+	n.SetLChild(nil)
+	n.SetRChild(nil)
 }

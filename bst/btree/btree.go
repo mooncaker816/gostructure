@@ -9,42 +9,60 @@ import (
 	"github.com/mooncaker816/gostructure/bst"
 )
 
-type BTree struct {
+func init() {
+	bst.RegisterBST(bst.BTree, New)
+}
+
+type bTree struct {
 	m    int // 阶数
-	root *Node
+	root *node
 	comp bst.Comparator
-	hot  *Node
+	hot  *node
 }
 
-func New(m int) *BTree {
-	return &BTree{m: m, comp: bst.BasicCompare}
+func New(parms ...interface{}) bst.BST {
+	bt := new(bTree)
+	bt.comp = bst.BasicCompare
+	for _, p := range parms {
+		switch v := p.(type) {
+		case bst.Comparator:
+			bt.comp = v
+		case int:
+			bt.m = v
+		}
+	}
+	return bt
 }
 
-func (b *BTree) Search(key interface{}) (*Node, bool) {
+func (b *bTree) Root() bst.Node {
+	return b.root
+}
+
+func (b *bTree) Search(key interface{}) (bst.Node, bool) {
 	n, _, ok := b.searchIn(b.root, key)
 	return n, ok
 }
 
-func (b *BTree) searchIn(n *Node, key interface{}) (hot *Node, i int, ok bool) {
-	i = sort.Search(len(n.Key), func(i int) bool {
-		result := b.comp(n.Key[i], key)
+func (b *bTree) searchIn(n *node, key interface{}) (hot *node, i int, ok bool) {
+	i = sort.Search(len(n.key), func(i int) bool {
+		result := b.comp(n.key[i], key)
 		return result == 1 || result == 0
 	})
 
 	// 在当前节点找到了key
-	if i < len(n.Key) && b.comp(n.Key[i], key) == 0 {
+	if i < len(n.key) && b.comp(n.key[i], key) == 0 {
 		return n, i, true
 	}
 	// 当前节点没有 key，且为叶子节点，则查找失败
-	if n.Children == nil {
+	if n.children == nil {
 		return n, i, false
 	}
 	// 当前节点没有 key，且当前节点有孩子节点，继续查找
-	return b.searchIn(n.Children[i], key)
+	return b.searchIn(n.children[i], key)
 }
 
 // Insert returns the exact node which stores the newly inserted key
-func (b *BTree) Insert(key, data interface{}) (*Node, error) {
+func (b *bTree) Insert(key, data interface{}) (bst.Node, error) {
 	if b.root == nil {
 		b.root = newNode(key, data, b.m)
 		return b.root, nil
@@ -53,11 +71,11 @@ func (b *BTree) Insert(key, data interface{}) (*Node, error) {
 	if ok {
 		return nil, errors.New("insert with duplicate key")
 	}
-	n.Key = insert(n.Key, key, i)
-	n.Data = insert(n.Data, data, i)
-	// n.Children = append(n.Children, nil)
-	// copy(n.Children[i+1:], n.Children[i:])
-	// n.Children[i] = nil
+	n.key = insert(n.key, key, i)
+	n.data = insert(n.data, data, i)
+	// n.children = append(n.children, nil)
+	// copy(n.children[i+1:], n.children[i:])
+	// n.children[i] = nil
 	b.solveOverflow(n, key)
 	return b.hot, nil
 }
@@ -74,20 +92,20 @@ func insert(a []interface{}, v interface{}, i int) []interface{} {
 	return a
 }
 
-func (b *BTree) solveOverflow(n *Node, origKey interface{}) {
+func (b *bTree) solveOverflow(n *node, origKey interface{}) {
 	b.hot = n
-	if b.m >= len(n.Key)+1 {
+	if b.m >= len(n.key)+1 {
 		return
 	}
 	mid := b.m / 2
-	upKey, upData := n.Key[mid], n.Data[mid]
+	upKey, upData := n.key[mid], n.data[mid]
 	sp := n.split(mid)
-	p := n.Parent
+	p := n.parent
 	if p == nil {
-		p = new(Node)
+		p = new(node)
 		b.root = p
-		n.Parent = p
-		p.Children = append(p.Children, n)
+		n.parent = p
+		p.children = append(p.children, n)
 	}
 	switch {
 	case b.comp(origKey, upKey) == 0:
@@ -96,114 +114,114 @@ func (b *BTree) solveOverflow(n *Node, origKey interface{}) {
 		b.hot = sp
 	}
 
-	i := sort.Search(len(p.Key), func(i int) bool {
-		result := b.comp(p.Key[i], upKey)
+	i := sort.Search(len(p.key), func(i int) bool {
+		result := b.comp(p.key[i], upKey)
 		return result == 1 || result == 0
 	})
 
-	p.Key = insert(p.Key, upKey, i)
-	p.Data = insert(p.Data, upData, i)
+	p.key = insert(p.key, upKey, i)
+	p.data = insert(p.data, upData, i)
 
-	p.Children = append(p.Children, sp)
-	if i < len(p.Children)-2 {
-		copy(p.Children[i+2:], p.Children[i+1:])
-		p.Children[i+1] = sp
+	p.children = append(p.children, sp)
+	if i < len(p.children)-2 {
+		copy(p.children[i+2:], p.children[i+1:])
+		p.children[i+1] = sp
 	}
-	sp.Parent = p
+	sp.parent = p
 	b.solveOverflow(p, origKey)
 }
 
-func (b *BTree) Remove(key interface{}) (*Node, error) {
+func (b *bTree) Remove(key interface{}) (bst.Node, error) {
 	n, i, ok := b.searchIn(b.root, key)
 	if !ok {
 		return nil, nil
 	}
-	if n.Children != nil {
-		succ := n.Children[i+1]
-		for len(succ.Children) > 0 {
-			succ = succ.Children[0]
+	if n.children != nil {
+		succ := n.children[i+1]
+		for len(succ.children) > 0 {
+			succ = succ.children[0]
 		}
-		n.Key[i] = succ.Key[0]
-		n.Data[i] = succ.Data[0]
-		succ.Key = succ.Key[1:]
-		succ.Data = succ.Data[1:]
+		n.key[i] = succ.key[0]
+		n.data[i] = succ.data[0]
+		succ.key = succ.key[1:]
+		succ.data = succ.data[1:]
 		b.solveUnderflow(succ)
 		return b.hot, nil
 	}
-	n.Key = append(n.Key[:i], n.Key[i+1:]...)
-	n.Data = append(n.Data[:i], n.Data[i+1:]...)
+	n.key = append(n.key[:i], n.key[i+1:]...)
+	n.data = append(n.data[:i], n.data[i+1:]...)
 	b.solveUnderflow(n)
 	return b.hot, nil
 }
 
-func (b *BTree) solveUnderflow(n *Node) {
+func (b *bTree) solveUnderflow(n *node) {
 	b.hot = n
 	bottom := int(math.Ceil(float64(b.m)/2)) - 1
 	// fmt.Println(bottom)
-	if len(n.Key) >= bottom {
+	if len(n.key) >= bottom {
 		return
 	}
-	p := n.Parent
+	p := n.parent
 	if p == nil {
-		if len(n.Key) == 0 && len(n.Children) > 0 {
-			b.root = n.Children[0]
-			b.root.Parent = nil
-			n.Children = nil
+		if len(n.key) == 0 && len(n.children) > 0 {
+			b.root = n.children[0]
+			b.root.parent = nil
+			n.children = nil
 		}
 		return
 	}
 	i := 0
-	for ; i < len(p.Children); i++ {
-		if p.Children[i] == n {
+	for ; i < len(p.children); i++ {
+		if p.children[i] == n {
 			break
 		}
 	}
 	// 有左兄弟，且不处在下溢临界点
 	if i > 0 {
-		ls := p.Children[i-1]
-		if len(ls.Key) > bottom {
+		ls := p.children[i-1]
+		if len(ls.key) > bottom {
 			// 向父节点借关键码
-			n.Key = insert(n.Key, p.Key[i-1], 0)
-			n.Data = insert(n.Data, p.Data[i-1], 0)
+			n.key = insert(n.key, p.key[i-1], 0)
+			n.data = insert(n.data, p.data[i-1], 0)
 			// 用左兄弟中最大的关键码填充父节点中被借出的关键码
-			p.Key[i-1] = ls.Key[len(ls.Key)-1]
-			p.Data[i-1] = ls.Data[len(ls.Data)-1]
+			p.key[i-1] = ls.key[len(ls.key)-1]
+			p.data[i-1] = ls.data[len(ls.data)-1]
 			// 左兄弟删除最大关键码
-			ls.Key = ls.Key[:len(ls.Key)-1]
-			ls.Data = ls.Data[:len(ls.Data)-1]
+			ls.key = ls.key[:len(ls.key)-1]
+			ls.data = ls.data[:len(ls.data)-1]
 			// 过继原来左兄弟最大关键码的右孩子给 n，作为最左面的孩子
-			if len(ls.Children) > 0 {
-				n.Children = append([]*Node{ls.Children[len(ls.Children)-1]}, n.Children...)
-				if n.Children[0] != nil {
-					n.Children[0].Parent = n
+			if len(ls.children) > 0 {
+				n.children = append([]*node{ls.children[len(ls.children)-1]}, n.children...)
+				if n.children[0] != nil {
+					n.children[0].parent = n
 				}
 				// 删除左兄弟的最右孩子
-				ls.Children = ls.Children[:len(ls.Children)-1]
+				ls.children = ls.children[:len(ls.children)-1]
 			}
 			return
 		}
 	}
 	// 有右兄弟，且右兄弟不处于下溢临界点
-	if i < len(p.Children)-1 {
-		rs := p.Children[i+1]
-		if len(rs.Key) > bottom {
+	if i < len(p.children)-1 {
+		rs := p.children[i+1]
+		if len(rs.key) > bottom {
 			// 向父节点借关键码
-			n.Key = insert(n.Key, p.Key[i], len(n.Key))
-			n.Data = insert(n.Data, p.Data[i], len(n.Data))
+			n.key = insert(n.key, p.key[i], len(n.key))
+			n.data = insert(n.data, p.data[i], len(n.data))
 			// 用右兄弟中最小的关键码填充父节点中被借出的关键码
-			p.Key[i] = rs.Key[0]
-			p.Data[i] = rs.Data[0]
+			p.key[i] = rs.key[0]
+			p.data[i] = rs.data[0]
 			// 右兄弟删除最小关键码
-			rs.Key = rs.Key[1:]
-			rs.Data = rs.Data[1:]
+			rs.key = rs.key[1:]
+			rs.data = rs.data[1:]
 			// 过继原来右兄弟最小关键码的左孩子给 n，作为最右面的孩子
-			if len(rs.Children) > 0 {
-				n.Children = append(n.Children, rs.Children[0])
-				if n.Children[len(n.Children)-1] != nil {
-					n.Children[len(n.Children)-1].Parent = n
+			if len(rs.children) > 0 {
+				n.children = append(n.children, rs.children[0])
+				if n.children[len(n.children)-1] != nil {
+					n.children[len(n.children)-1].parent = n
 				}
 				// 删除右兄弟的最左孩子
-				rs.Children = rs.Children[1:]
+				rs.children = rs.children[1:]
 			}
 			return
 		}
@@ -211,87 +229,87 @@ func (b *BTree) solveUnderflow(n *Node) {
 	// 左右兄弟要么不存在，要么都处于自身难保的情况
 	// 与左兄弟合并
 	if i > 0 {
-		ls := p.Children[i-1]
+		ls := p.children[i-1]
 		// 首先和父节点关键码合并
-		ls.Key = append(ls.Key, p.Key[i-1])
-		ls.Data = append(ls.Data, p.Data[i-1])
+		ls.key = append(ls.key, p.key[i-1])
+		ls.data = append(ls.data, p.data[i-1])
 		// 删除父节点关键码
-		if i < len(p.Key) {
-			copy(p.Key[i-1:], p.Key[i:])
-			p.Key[len(p.Key)-1] = nil
-			copy(p.Data[i-1:], p.Data[i:])
-			p.Data[len(p.Data)-1] = nil
+		if i < len(p.key) {
+			copy(p.key[i-1:], p.key[i:])
+			p.key[len(p.key)-1] = nil
+			copy(p.data[i-1:], p.data[i:])
+			p.data[len(p.data)-1] = nil
 		}
-		p.Key = p.Key[:len(p.Key)-1]
-		p.Data = p.Data[:len(p.Data)-1]
+		p.key = p.key[:len(p.key)-1]
+		p.data = p.data[:len(p.data)-1]
 		// 删除父节点关键码指向 n 的连接
-		if i < len(p.Children)-1 {
-			copy(p.Children[i:], p.Children[i+1:])
-			p.Children[len(p.Children)-1] = nil
+		if i < len(p.children)-1 {
+			copy(p.children[i:], p.children[i+1:])
+			p.children[len(p.children)-1] = nil
 		}
-		p.Children = p.Children[:len(p.Children)-1]
+		p.children = p.children[:len(p.children)-1]
 		// 与左兄弟合并
-		ls.Key = append(ls.Key, n.Key...)
-		ls.Data = append(ls.Data, n.Data...)
-		for _, child := range n.Children {
+		ls.key = append(ls.key, n.key...)
+		ls.data = append(ls.data, n.data...)
+		for _, child := range n.children {
 			if child != nil {
-				child.Parent = ls
+				child.parent = ls
 			}
 		}
-		ls.Children = append(ls.Children, n.Children...)
+		ls.children = append(ls.children, n.children...)
 	} else {
 		// 与右兄弟合并
-		rs := p.Children[i+1]
-		rs.Key = append([]interface{}{p.Key[i]}, rs.Key...)
-		rs.Data = append([]interface{}{p.Data[i]}, rs.Data...)
+		rs := p.children[i+1]
+		rs.key = append([]interface{}{p.key[i]}, rs.key...)
+		rs.data = append([]interface{}{p.data[i]}, rs.data...)
 		// 删除父节点关键码
-		if len(p.Key) > i+1 {
-			copy(p.Key[i:], p.Key[i+1:])
-			p.Key[len(p.Key)-1] = nil
-			copy(p.Data[i:], p.Data[i+1:])
-			p.Data[len(p.Data)-1] = nil
+		if len(p.key) > i+1 {
+			copy(p.key[i:], p.key[i+1:])
+			p.key[len(p.key)-1] = nil
+			copy(p.data[i:], p.data[i+1:])
+			p.data[len(p.data)-1] = nil
 		}
-		p.Key = p.Key[:len(p.Key)-1]
-		p.Data = p.Data[:len(p.Data)-1]
+		p.key = p.key[:len(p.key)-1]
+		p.data = p.data[:len(p.data)-1]
 		// 删除父节点关键码指向 n 的连接
-		copy(p.Children[i:], p.Children[i+1:])
-		p.Children[len(p.Children)-1] = nil
-		p.Children = p.Children[:len(p.Children)-1]
+		copy(p.children[i:], p.children[i+1:])
+		p.children[len(p.children)-1] = nil
+		p.children = p.children[:len(p.children)-1]
 		// 与右兄弟合并
-		rs.Key = append(n.Key, rs.Key...)
-		rs.Data = append(n.Data, rs.Data...)
-		for _, child := range n.Children {
+		rs.key = append(n.key, rs.key...)
+		rs.data = append(n.data, rs.data...)
+		for _, child := range n.children {
 			if child != nil {
-				child.Parent = rs
+				child.parent = rs
 			}
 		}
-		rs.Children = append(n.Children, rs.Children...)
+		rs.children = append(n.children, rs.children...)
 	}
 	b.solveUnderflow(p)
 }
 
-func (b *BTree) Print() {
-	q := make([]*Node, 1)
+func (b *bTree) Print() {
+	q := make([]*node, 1)
 	q[0] = b.root
 	levelFirst := b.root
 	for len(q) > 0 {
 		n := q[0]
 		q = q[1:]
-		if n.Parent == levelFirst {
+		if n.parent == levelFirst {
 			fmt.Println()
 			levelFirst = n
 		}
 		// fmt.Printf("%p ", n)
 		fmt.Printf("$")
-		for i, v := range n.Key {
+		for i, v := range n.key {
 			fmt.Printf("%v", v)
-			if i < len(n.Key)-1 {
+			if i < len(n.key)-1 {
 				fmt.Printf(",")
 			}
 		}
 		fmt.Printf("$ ")
 		// fmt.Printf("->")
-		for _, c := range n.Children {
+		for _, c := range n.children {
 			if c != nil {
 				q = append(q, c)
 				// fmt.Printf("%p ", c)
@@ -301,13 +319,17 @@ func (b *BTree) Print() {
 	fmt.Println()
 }
 
-func (b *BTree) TravLevel(opts ...Option) {
-	q := make([]*Node, 1)
+// LevelOrder only
+func (b *bTree) Walk(o bst.Order, opts ...bst.Option) {
+	if o != bst.LevelOrder {
+		panic("unsupported walk order for B-Tree")
+	}
+	q := make([]*node, 1)
 	q[0] = b.root
 	for len(q) > 0 {
 		n := q[0]
 		q = q[1:]
-		for _, c := range n.Children {
+		for _, c := range n.children {
 			if c != nil {
 				q = append(q, c)
 			}

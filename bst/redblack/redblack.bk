@@ -1,0 +1,410 @@
+package redblack
+
+import (
+	"errors"
+
+	"github.com/mooncaker816/gostructure/bst"
+)
+
+func init() {
+	bst.RegisterBST(bst.RBTree, New)
+}
+
+type rbTree struct {
+	root *node
+	comp bst.Comparator
+}
+
+func New(parms ...interface{}) bst.BST {
+	t := new(rbTree)
+	t.comp = bst.BasicCompare
+	for _, p := range parms {
+		switch v := p.(type) {
+		case bst.Comparator:
+			t.comp = v
+		}
+	}
+	return t
+}
+
+func rbOK(n *node) bool {
+	lh, rh := -1, -1
+	if n.hasLChild() {
+		lh = n.lchild.height
+	}
+	if n.hasRChild() {
+		rh = n.rchild.height
+	}
+	if lh != rh {
+		return false
+	}
+	if n.isRed() {
+		return n.height == lh
+	}
+	return n.height == lh+1
+}
+
+func (rb *rbTree) Search(key interface{}) (bst.Node, bool) {
+	n, result := rb.searchIn(rb.root, key)
+	if result == 0 {
+		return n, true
+	}
+	return n, false
+}
+
+func (rb *rbTree) searchIn(n *node, key interface{}) (*node, int) {
+	switch rb.comp(key, n.key) {
+	case 0:
+		return n, 0
+	case -1:
+		if n.hasLChild() {
+			return rb.searchIn(n.lchild, key)
+		}
+		return n, -1
+	case 1:
+		if n.hasRChild() {
+			return rb.searchIn(n.rchild, key)
+		}
+		return n, 1
+	default:
+		panic("compare result illegal")
+	}
+}
+
+func (rb *rbTree) Insert(key, data interface{}) (bst.Node, error) {
+	if rb.root == nil {
+		rb.root = newNode(key, data)
+		rb.root.setBlack()
+		return rb.root, nil
+	}
+	n, result := rb.searchIn(rb.root, key)
+	switch result {
+	case 0:
+		return nil, errors.New("insert node with duplicate key")
+	case -1:
+		new := newNode(key, data)
+		n.attachLChild(new)
+		rb.solveDoubleRed(new)
+		return new, nil
+	case 1:
+		new := newNode(key, data)
+		n.attachRChild(new)
+		rb.solveDoubleRed(new)
+		return new, nil
+	}
+	return nil, nil
+}
+
+func (rb *rbTree) solveDoubleRed(n *node) {
+	if n.isRoot() {
+		n.setBlack()
+		n.height++
+		return
+	}
+	p := n.parent
+	if p.isBlack() {
+		return
+	}
+	g := p.parent
+	u := p.sibling()
+	if u.isBlack() { // RR-1
+		x := g.parent
+		if g.isLChild() {
+			x.lchild = rr1(n)
+		} else if g.isRChild() {
+			x.rchild = rr1(n)
+		} else {
+			rb.root = rr1(n)
+		}
+	} else { // RR-2
+		p.setBlack()
+		p.height++
+		u.setBlack()
+		u.height++
+		if !g.isRoot() {
+			g.setRed()
+		}
+		rb.solveDoubleRed(g)
+	}
+}
+
+// roate + change color + update height for RR-1
+func rr1(n *node) *node {
+	a, b, c := rotateAt(n)
+	a.setRed()
+	c.setRed()
+	b.setBlack()
+	a.updateHeight()
+	b.updateHeight()
+	c.updateHeight()
+	return b
+}
+
+// connect34 connect bst.Nodes as below
+//	 	   b
+//		a	  c
+//	  T0 T1 T2 T3
+func connect34(a, b, c, t1, t2, t3, t4 *node) {
+	a.lchild = t1
+	if t1 != nil {
+		t1.parent = a
+	}
+	a.rchild = t2
+	if t2 != nil {
+		t2.parent = a
+	}
+	c.lchild = t3
+	if t3 != nil {
+		t3.parent = c
+	}
+	c.rchild = t4
+	if t4 != nil {
+		t4.parent = c
+	}
+	b.lchild = a
+	b.rchild = c
+	a.parent = b
+	c.parent = b
+	return
+}
+
+//	 	   b
+//		a	  c
+func rotateAt(v *node) (a, b, c *node) {
+	p := v.parent
+	g := p.parent
+	if v.isLChild() {
+		if p.isLChild() {
+			p.parent = g.parent
+			connect34(v, p, g, v.lchild, v.rchild, p.rchild, g.rchild)
+			return v, p, g
+		}
+		if p.isRChild() {
+			v.parent = g.parent
+			connect34(g, v, p, g.lchild, v.lchild, v.rchild, p.rchild)
+			return g, v, p
+		}
+	}
+	if v.isRChild() {
+		if p.isLChild() {
+			v.parent = g.parent
+			connect34(p, v, g, p.lchild, v.lchild, v.rchild, g.rchild)
+			return p, v, g
+		}
+		if p.isRChild() {
+			p.parent = g.parent
+			connect34(g, p, v, g.lchild, p.lchild, v.lchild, v.rchild)
+			return g, p, v
+		}
+	}
+	return nil, nil, nil
+}
+
+func (rb *rbTree) Remove(key interface{}) (bst.Node, error) {
+	n, result := rb.searchIn(rb.root, key)
+	if result != 0 {
+		return nil, nil
+	}
+	hot, r, _ := rb.removeAt(n)
+	if rb.root == nil {
+		return nil, nil
+	}
+	if hot == nil {
+		rb.root.setBlack()
+		rb.root.updateHeight()
+		return hot, nil
+	}
+	if rbOK(hot) {
+		return hot, nil
+	}
+	if r.isRed() {
+		r.setBlack()
+		r.height++
+		return hot, nil
+	}
+	rb.solveDoubleBlack(r, hot)
+	return hot, nil
+}
+
+func (rb *rbTree) removeAt(n *node) (hot, r *node, err error) {
+	// n has both left and right subtree
+	if n.hasLChild() && n.hasRChild() {
+		succ := n.successor()
+		swapKeyData(n, succ)
+		hot = succ.parent
+		r = succ.rchild
+		if succ == n.rchild {
+			hot = n
+			if succ.hasRChild() {
+				succ.rchild.parent = n
+			}
+			n.rchild = succ.rchild
+		} else if succ.hasRChild() {
+			// hot = succ.parent
+			succ.rchild.parent = hot
+			hot.lchild = succ.rchild
+		} else {
+			// hot = succ.parent
+			hot.lchild = nil
+		}
+		succ.parent, succ.lchild, succ.rchild = nil, nil, nil
+		return hot, r, nil
+	}
+	// n only has left subtree
+	if n.hasLChild() && !n.hasRChild() {
+		if n.isLChild() {
+			n.parent.lchild = n.lchild
+		} else if n.isRChild() {
+			n.parent.rchild = n.lchild
+		} else {
+			rb.root = n.lchild
+		}
+		n.lchild.parent = n.parent
+		hot = n.parent
+		r = n.lchild
+		n.parent, n.lchild, n.rchild = nil, nil, nil
+		return hot, r, nil
+	}
+	// n only has right subtree
+	if !n.hasLChild() && n.hasRChild() {
+		if n.isLChild() {
+			n.parent.lchild = n.rchild
+		} else if n.isRChild() {
+			n.parent.rchild = n.rchild
+		} else {
+			rb.root = n.rchild
+		}
+		n.rchild.parent = n.parent
+		hot = n.parent
+		r = n.rchild
+		n.parent, n.lchild, n.rchild = nil, nil, nil
+		return hot, r, nil
+	}
+	// n is leaf(or single root)
+	if n.isLChild() {
+		n.parent.lchild = nil
+	} else if n.isRChild() {
+		n.parent.rchild = nil
+	} else {
+		rb.root = nil
+	}
+	hot = n.parent
+	n.parent, n.lchild, n.rchild = nil, nil, nil
+	return hot, nil, nil
+}
+func (rb *rbTree) solveDoubleBlack(r, hot *node) {
+	var p, s *node
+	if r != nil {
+		p = r.parent
+	} else {
+		p = hot
+	}
+	if p == nil {
+		return
+	}
+
+	if r == p.lchild {
+		s = p.rchild
+	} else {
+		s = p.lchild
+	}
+	if s.isBlack() {
+		var t *node
+		if s.rchild.isRed() {
+			t = s.rchild
+		}
+		if s.lchild.isRed() {
+			t = s.lchild
+		}
+		if t != nil { // BB-1 s至少有一个红孩子
+			oldattr := p.attr
+			x := p.parent
+			if p.isLChild() {
+				x.lchild = bb1(t, oldattr)
+			} else if p.isRChild() {
+				x.rchild = bb1(t, oldattr)
+			} else {
+				rb.root = bb1(t, oldattr)
+			}
+		} else {
+			s.setRed()
+			s.height--
+			if p.isRed() { // BB-2R
+				p.setBlack()
+			} else { // BB-2B
+				p.height--
+				rb.solveDoubleBlack(p, hot)
+			}
+		}
+	} else { // BB-3
+		s.setBlack()
+		p.setRed()
+		hot = p
+		var t *node
+		if s.isLChild() {
+			t = s.lchild
+		} else {
+			t = s.rchild
+		}
+		x := p.parent
+		if p.isLChild() {
+			x.lchild = bb3(t)
+		} else if p.isRChild() {
+			x.rchild = bb3(t)
+		} else {
+			rb.root = bb3(t)
+		}
+		rb.solveDoubleBlack(r, hot)
+	}
+}
+
+func bb1(n *node, oldattr uint8) *node {
+	a, b, c := rotateAt(n)
+	a.updateHeight()
+	b.updateHeight()
+	c.updateHeight()
+
+	b.attr = b.attr&0xfe | oldattr&1
+	b.updateHeight()
+
+	if b.hasLChild() {
+		b.lchild.setBlack()
+		b.lchild.updateHeight()
+	}
+	if b.hasRChild() {
+		b.rchild.setBlack()
+		b.rchild.updateHeight()
+	}
+	return b
+}
+
+func bb3(n *node) *node {
+	a, b, c := rotateAt(n)
+	a.updateHeight()
+	b.updateHeight()
+	c.updateHeight()
+	return b
+}
+
+func (rb *rbTree) Root() bst.Node {
+	return rb.root
+}
+
+func (rb *rbTree) Print() {
+	rb.root.PrintWithUnitSize(2)
+}
+
+func (rb *rbTree) Walk(o bst.Order, opts ...bst.Option) {
+	switch o {
+	case bst.PreOrder:
+		rb.root.travPre(opts...)
+	case bst.InOrder:
+		rb.root.travIn(opts...)
+	case bst.PostOrder:
+		rb.root.travPost(opts...)
+	case bst.LevelOrder:
+		rb.root.travLevel(opts...)
+	default:
+		panic("unsupported walk order")
+	}
+}
